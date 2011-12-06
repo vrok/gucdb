@@ -9,22 +9,18 @@
 #define TRIE_H_
 
 #include <string>
+
+#include "BinFile.h"
+#include "BinFileMap.h"
+#include "TrieNode.h"
+
 using namespace std;
 
 namespace Db {
 
-class Trie {
-private:
-    int fd;
-    unsigned long long int mmaped_size;
-    void *fileStart;
-
-    string mmapErrnoToStr(int errnoNum);
-    void openTrieFile(const string & filename);
-    void closeTrieFile();
-    void extendFileToSize(off_t newSize);
+class Trie : public BinFile<TrieNode> {
 public:
-	Trie(const string &filename);
+	Trie(const string &filename, BinFileMap *trieMap);
 	virtual ~Trie();
 };
 

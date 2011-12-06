@@ -5,6 +5,9 @@ TrieLeaf.cpp
 TrieNode.cpp
 Trie.cpp
 SystemParams.cpp
+MMapedFile.cpp
+BinFileMap.cpp
+BinFile.cpp
 """)
 
 modules = ['modules/%s' % x for x in modules]

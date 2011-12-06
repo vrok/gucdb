@@ -14,14 +14,13 @@ class SystemParams {
 private:
     static long _pageSize;
 public:
-    SystemParams();
-    virtual ~SystemParams();
-
     static long pageSize();
 
     static long initialIndexSize();
 
-    static long minimalExpandSize();
+    static long initialIndexMapSize();
+
+    static long minimalIndexExpandSize();
 };
 
 } /* namespace Db */

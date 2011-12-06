@@ -6,9 +6,11 @@
  */
 
 #include <string>
+#include <iostream>
 using namespace std;
 
 #include "Trie.h"
+#include "BinFileMap.h"
 
 #include "Database.h"
 
@@ -18,7 +20,19 @@ namespace Db {
 Database::Database(const string & dbDirectory)
 : dbDirectory(dbDirectory)
 {
-	mainIndex = new Trie(dbDirectory + "/main.tidx");
+	mainIndex = new Trie(dbDirectory + "/main.tidx", new BinFileMap(dbDirectory + "/main.map"));
+
+	TrieNode *newNode = mainIndex->getNewBin();
+	cout << "New node: " << newNode << endl;
+
+	newNode = mainIndex->getNewBin();
+    cout << "New node: " << newNode << endl;
+
+    newNode = mainIndex->getNewBin();
+    cout << "New node: " << newNode << endl;
+
+    //newNode = mainIndex->getNewBin();
+    //cout << "New node: " << newNode << endl;
 }
 
 Database::~Database()

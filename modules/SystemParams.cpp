@@ -15,14 +15,7 @@ namespace Db {
 
 long SystemParams::_pageSize = 0;
 
-SystemParams::SystemParams() {
-    // TODO Auto-generated constructor stub
-
-}
-
-SystemParams::~SystemParams() {
-    // TODO Auto-generated destructor stub
-}
+#define INITIAL_NUMBER_OF_EMPTY_PAGES 16
 
 long SystemParams::pageSize() {
     if (_pageSize == 0) {
@@ -32,10 +25,15 @@ long SystemParams::pageSize() {
 }
 
 long SystemParams::initialIndexSize() {
-    return minimalExpandSize() * 16;
+    return minimalIndexExpandSize() * INITIAL_NUMBER_OF_EMPTY_PAGES;
 }
 
-long SystemParams::minimalExpandSize() {
+long SystemParams::initialIndexMapSize() {
+    /* one bit per trie node */
+    return INITIAL_NUMBER_OF_EMPTY_PAGES / 8;
+}
+
+long SystemParams::minimalIndexExpandSize() {
     long pSize = pageSize();
 
     if (pSize < sizeof(TrieNode)) {
