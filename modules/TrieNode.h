@@ -12,8 +12,13 @@ namespace Db {
 
 #define NODE_SIZE 0xff
 
+struct TriePointer {
+    unsigned char leaf : 1;
+    unsigned long long int link : 63;
+};
+
 struct TrieNode {
-    unsigned long long int children[NODE_SIZE];
+    TriePointer children[NODE_SIZE];
 };
 
 } /* namespace Db */

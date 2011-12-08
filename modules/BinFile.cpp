@@ -46,7 +46,7 @@ BinType *BinFile<BinType>::getNewBin() {
 
 template<typename BinType>
 void BinFile<BinType>::freeBin(unsigned long int id) {
-
+    trieMap->makeBinEmpty(id);
 }
 
 /* TODO: code below could be easily computed during compilation in c++11 */

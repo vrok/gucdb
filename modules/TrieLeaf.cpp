@@ -9,13 +9,4 @@
 
 namespace Db {
 
-TrieLeaf::TrieLeaf() {
-	// TODO Auto-generated constructor stub
-
-}
-
-TrieLeaf::~TrieLeaf() {
-	// TODO Auto-generated destructor stub
-}
-
 } /* namespace Db */

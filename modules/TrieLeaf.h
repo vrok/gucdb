@@ -10,10 +10,12 @@
 
 namespace Db {
 
+// We might prefer to use actual page size.
+#define TYPICAL_PAGE_SIZE 4096
+
 class TrieLeaf {
 public:
-	TrieLeaf();
-	virtual ~TrieLeaf();
+    unsigned char data[2 * TYPICAL_PAGE_SIZE];
 };
 
 } /* namespace Db */

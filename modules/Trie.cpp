@@ -28,6 +28,8 @@ Trie::Trie(const string & filename, BinFileMap *trieMap)
 : BinFile<TrieNode>::BinFile(filename, trieMap, SystemParams::initialIndexSize()) {
     //openMMapedFile(filename, SystemParams::initialIndexSize());
     cout << "Index file opened" << endl;
+
+    TrieNode *rootNode = getBin(0);
 }
 
 Trie::~Trie() {
