@@ -26,6 +26,19 @@ namespace Db {
 
 Trie::Trie(const string & filename, BinFileMap *trieMap)
 : BinFile<TrieNode>::BinFile(filename, trieMap, SystemParams::initialIndexSize()) {
+
+    switch (openMMapedFile(filename, initialFileSize)) {
+    case OPENED:
+        break;
+    case NEW_FILE:
+        initializeEmpty();
+        break;
+    case ERROR:
+    default:
+        cerr << "Opening trie file failed" << endl;
+        break;
+    }
+
     //openMMapedFile(filename, SystemParams::initialIndexSize());
     cout << "Index file opened" << endl;
 
@@ -33,7 +46,13 @@ Trie::Trie(const string & filename, BinFileMap *trieMap)
 }
 
 Trie::~Trie() {
-    //closeMMapedFile();
+    closeMMapedFile();
+}
+
+void Trie::initializeEmpty() {
+    cout << "Initializing empty trie file" << endl;
+
+    TrieNode *rootNode = getBin(0);
 }
 
 } /* namespace Db */

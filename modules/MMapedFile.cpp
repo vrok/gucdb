@@ -37,7 +37,7 @@ void MMapedFile::extendFileToSize(off_t newSize) {
     }
 }
 
-int MMapedFile::openMMapedFile(const std::string &filename, unsigned long minimalInitialSize) {
+MMapedFile::OpeningResult MMapedFile::openMMapedFile(const std::string &filename, unsigned long minimalInitialSize) {
     struct stat sb;
     off_t len;
     char *p;
@@ -46,14 +46,17 @@ int MMapedFile::openMMapedFile(const std::string &filename, unsigned long minima
     fd = open(filename.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
     if (fd == -1) {
         cerr << "open error" << endl;
+        return ERROR;
     }
 
     if (fstat(fd, &sb) == -1) {
         cerr << "Fstat error" << endl;
+        return ERROR;
     }
 
     if (!S_ISREG(sb.st_mode)) {
         cerr << filename << " is not a file" << endl;
+        return ERROR;
     }
 
     mmaped_size = sb.st_size;
@@ -70,6 +73,7 @@ int MMapedFile::openMMapedFile(const std::string &filename, unsigned long minima
         int errorNum = errno;
         string errorDesc = mmapErrnoToStr(errorNum);
         cerr << filename << ": mmap failed with " << errorDesc << endl;
+        return ERROR;
     }
 
     if (fillWithZerosAfterMmap) {
@@ -78,7 +82,11 @@ int MMapedFile::openMMapedFile(const std::string &filename, unsigned long minima
         for (char *loc = (char*)(fileStart); loc < fileEnd; loc++) {
             *loc = 0;
         }
+
+        return NEW_FILE;
     }
+
+    return OPENED;
 }
 
 string MMapedFile::mmapErrnoToStr(int errnoNum) {

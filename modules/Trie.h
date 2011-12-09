@@ -21,7 +21,9 @@ namespace Db {
 class Trie : public BinFile<TrieNode> {
 public:
 	Trie(const string &filename, BinFileMap *trieMap);
-	virtual ~Trie();
+	~Trie();
+
+	void initializeEmpty();
 };
 
 } /* namespace Db */

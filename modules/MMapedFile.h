@@ -19,7 +19,14 @@ protected:
     void *fileStart;
 
 public:
-    int openMMapedFile(const std::string &filename, unsigned long minimalInitialSize);
+
+    enum OpeningResult {
+        ERROR,
+        NEW_FILE,
+        OPENED,
+    };
+
+    OpeningResult openMMapedFile(const std::string &filename, unsigned long minimalInitialSize);
 
     void extendFileToSize(off_t newSize);
 

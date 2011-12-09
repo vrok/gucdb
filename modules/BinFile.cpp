@@ -18,12 +18,12 @@ namespace Db {
 template<typename BinType>
 BinFile<BinType>::BinFile(const string &filename, BinFileMap *trieMap, unsigned long initialFileSize)
 : initialFileSize(initialFileSize), trieMap(trieMap) {
-    openMMapedFile(filename, initialFileSize);
+
 }
 
 template<typename BinType>
 BinFile<BinType>::~BinFile() {
-    closeMMapedFile();
+
 }
 
 template<typename BinType>

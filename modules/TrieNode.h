@@ -19,6 +19,10 @@ struct TriePointer {
 
 struct TrieNode {
     TriePointer children[NODE_SIZE];
+
+    void setChild(unsigned char character, const TriePointer &childPointer);
+
+    void setChildrenRange(unsigned char firstCharacter, unsigned char lastCharacter, const TriePointer &childPointer);
 };
 
 } /* namespace Db */
