@@ -8,6 +8,7 @@ SystemParams.cpp
 MMapedFile.cpp
 BinFileMap.cpp
 BinFile.cpp
+TriePointer.cpp
 """)
 
 modules = ['modules/%s' % x for x in modules]

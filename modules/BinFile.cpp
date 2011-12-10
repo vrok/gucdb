@@ -10,6 +10,8 @@ using namespace std;
 
 #include "SystemParams.h"
 #include "TrieNode.h"
+#include "TrieLeaf.h"
+#include "MMapedFile.h"
 
 #include "BinFile.h"
 
@@ -17,13 +19,18 @@ namespace Db {
 
 template<typename BinType>
 BinFile<BinType>::BinFile(const string &filename, BinFileMap *trieMap, unsigned long initialFileSize)
-: initialFileSize(initialFileSize), trieMap(trieMap) {
+: filename(filename), initialFileSize(initialFileSize), trieMap(trieMap) {
 
 }
 
 template<typename BinType>
 BinFile<BinType>::~BinFile() {
 
+}
+
+template<typename BinType>
+MMapedFile::OpeningResult BinFile<BinType>::openMMapedFile() {
+    return MMapedFile::openMMapedFile(filename, initialFileSize);
 }
 
 template<typename BinType>
@@ -42,6 +49,11 @@ BinType *BinFile<BinType>::getNewBin() {
         return (BinType*) NULL;
     }
     return getBin(id);
+}
+
+template<typename BinType>
+unsigned long long BinFile<BinType>::getNewBinByID() {
+    return trieMap->fetchEmptyBin();
 }
 
 template<typename BinType>
@@ -66,5 +78,6 @@ unsigned long BinFile<BinType>::minimalIndexExpandSize() {
 }
 
 template class BinFile<TrieNode>;
+template class BinFile<TrieLeaf>;
 
 } /* namespace Db */

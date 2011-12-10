@@ -17,18 +17,24 @@ using namespace std;
 namespace Db {
 
 template <typename BinType>
-class BinFile : MMapedFile {
+class BinFile : public MMapedFile {
 public: /* TODO: change to protected */
     unsigned long initialFileSize;
+    string filename;
+
     BinFileMap *trieMap;
+
+    OpeningResult openMMapedFile();
 
     BinType *getBin(unsigned long id);
 
     BinType *getNewBin();
 
+    unsigned long long getNewBinByID();
+
     void freeBin(unsigned long id);
 
-    unsigned long minimalIndexExpandSize();
+    static unsigned long minimalIndexExpandSize();
 
 public:
     BinFile(const string &filename, BinFileMap *trieMap, unsigned long initialFileSize);

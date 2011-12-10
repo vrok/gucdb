@@ -20,8 +20,14 @@ namespace Db {
 Database::Database(const string & dbDirectory)
 : dbDirectory(dbDirectory)
 {
-	mainIndex = new Trie(dbDirectory + "/main.tidx", new BinFileMap(dbDirectory + "/main.map"));
 
+    mainIndex = new Trie(new BinFile<TrieNode>(dbDirectory + "/main.nodes",
+                                               new BinFileMap(dbDirectory + "/main.nodes.map"),
+                                               BinFile<TrieNode>::minimalIndexExpandSize() * 32),
+                         new BinFile<TrieLeaf>(dbDirectory + "/main.leaves",
+                                               new BinFileMap(dbDirectory + "/main.leaves.map"),
+                                               BinFile<TrieLeaf>::minimalIndexExpandSize() * 8));
+#if 0
 	TrieNode *newNode = mainIndex->getNewBin();
 	cout << "New node: " << newNode << endl;
 
@@ -30,7 +36,7 @@ Database::Database(const string & dbDirectory)
 
     newNode = mainIndex->getNewBin();
     cout << "New node: " << newNode << endl;
-
+#endif
     //newNode = mainIndex->getNewBin();
     //cout << "New node: " << newNode << endl;
 }

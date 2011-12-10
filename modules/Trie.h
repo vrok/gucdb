@@ -13,14 +13,19 @@
 #include "BinFile.h"
 #include "BinFileMap.h"
 #include "TrieNode.h"
+#include "TrieLeaf.h"
 
 using namespace std;
 
 namespace Db {
 
-class Trie : public BinFile<TrieNode> {
+class Trie {
+private:
+    BinFile<TrieNode> *nodes;
+    BinFile<TrieLeaf> *leaves;
+
 public:
-	Trie(const string &filename, BinFileMap *trieMap);
+	Trie(BinFile<TrieNode> *nodes, BinFile<TrieLeaf> *leaves);
 	~Trie();
 
 	void initializeEmpty();

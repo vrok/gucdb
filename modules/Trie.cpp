@@ -7,6 +7,7 @@
 
 #include "SystemParams.h"
 #include "TrieNode.h"
+#include "MMapedFile.h"
 #include "BinFile.h"
 #include "BinFileMap.h"
 
@@ -24,35 +25,42 @@ using namespace std;
 
 namespace Db {
 
-Trie::Trie(const string & filename, BinFileMap *trieMap)
-: BinFile<TrieNode>::BinFile(filename, trieMap, SystemParams::initialIndexSize()) {
+Trie::Trie(BinFile<TrieNode> *nodes, BinFile<TrieLeaf> *leaves)
+    : nodes(nodes), leaves(leaves) {
 
-    switch (openMMapedFile(filename, initialFileSize)) {
-    case OPENED:
+    switch (nodes->openMMapedFile()) {
+    case MMapedFile::OPENED:
         break;
-    case NEW_FILE:
+    case MMapedFile::NEW_FILE:
         initializeEmpty();
         break;
-    case ERROR:
+    case MMapedFile::ERROR:
     default:
         cerr << "Opening trie file failed" << endl;
         break;
     }
 
-    //openMMapedFile(filename, SystemParams::initialIndexSize());
     cout << "Index file opened" << endl;
-
-    TrieNode *rootNode = getBin(0);
 }
 
 Trie::~Trie() {
-    closeMMapedFile();
+    nodes->closeMMapedFile();
+    leaves->closeMMapedFile();
 }
 
 void Trie::initializeEmpty() {
     cout << "Initializing empty trie file" << endl;
 
-    TrieNode *rootNode = getBin(0);
+    TrieNode *rootNode = nodes->getBin(0);
+
+    unsigned long long leafID = leaves->getNewBinByID();
+
+    if (leafID == -1) {
+        cerr << __FILE__ << ":" << __LINE__ << " Couldn't fetch new leaf" << endl;\
+        return;
+    }
+
+    rootNode->setChildrenRange(0x00, 0xff, TriePointer(true, leafID));
 }
 
 } /* namespace Db */
