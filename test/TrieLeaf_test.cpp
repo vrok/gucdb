@@ -157,7 +157,7 @@ TEST_F(TrieLeafTest, TestMoveToAnother)
 
 TEST_F(TrieLeafTest, TestBulkMoveToAnother)
 {
-    for (int i = 1; i < 20; i++) {
+    for (int i = 1; i < 40; i++) {
         Db::DatabaseKey key;
 
         stringstream intToStringConverter;
@@ -181,7 +181,7 @@ TEST_F(TrieLeafTest, TestBulkMoveToAnother)
     leaf.moveAllBelowToAnotherLeaf(dividing_key, 0, anotherLeaf);
 
 
-    for (int i = 1; i < 20; i++) {
+    for (int i = 1; i < 40; i++) {
         Db::DatabaseKey key;
 
         stringstream intToStringConverter;

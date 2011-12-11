@@ -130,10 +130,10 @@ void TrieLeaf::moveAllBelowToAnotherLeaf(const DatabaseKey &key, int firstCharac
             strCompare = 0;
         } else
         if (currentCharacter == endCharacter) {
-            strCompare = -1;
+            strCompare = 1;
         } else
         if (currentKeyCharacter == endKeyCharacter) {
-            strCompare = 1;
+            strCompare = -1;
         } else {
             strCompare = *currentCharacter > *currentKeyCharacter ? -1 : 1;
         }
