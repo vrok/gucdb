@@ -12,13 +12,38 @@
 
 namespace Db {
 
-#define DATA_LOCATION_TO_ULL(loc)   (*((unsigned long*)loc))
+#define DATA_LOCATION_TO_UL(loc)    (*((unsigned long*)(loc)))
+#define DATA_LOCATION_TO_ULL(loc)   (*((unsigned long long*)(loc)))
 /* Used size is stored in the first location of the data array. */
-#define LEAF_USED_SIZE              DATA_LOCATION_TO_ULL(data)
-#define DATA_AFTER_LEAF_USED_SIZE   DATA_LOCATION_TO_ULL(data + sizeof(unsigned long))
+#define LEAF_USED_SIZE              (DATA_LOCATION_TO_UL(data) + sizeof(unsigned long))
+#define DATA_AFTER_LEAF_USED_SIZE   (data + sizeof(unsigned long))
 
 unsigned long long TrieLeaf::get(const DatabaseKey &key, int firstCharactedIdx)
 {
+    unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
+
+    while (currentLoc < (data + LEAF_USED_SIZE)) {
+        unsigned char *endCharacter = currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc);
+        const unsigned char *endKeyCharacter = key.data + key.length;
+        unsigned char *currentCharacter = currentLoc + sizeof(unsigned long);
+        const unsigned char *currentKeyCharacter = key.data + firstCharactedIdx;
+
+        while ((currentCharacter < endCharacter) &&
+               (currentKeyCharacter < endKeyCharacter) &&
+               (*currentCharacter == *currentKeyCharacter))
+        {
+
+            currentCharacter++;
+            currentKeyCharacter++;
+        }
+
+        if ((currentCharacter == endCharacter) && (currentKeyCharacter == endKeyCharacter)) {
+            return DATA_LOCATION_TO_ULL(currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc));
+        }
+
+        currentLoc += sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(unsigned long long);
+    }
+
     return 0;
 }
 
@@ -26,14 +51,16 @@ void TrieLeaf::add(const DatabaseKey &key, int firstCharacterIdx, unsigned long 
 {
     assert(canFit(key, firstCharacterIdx));
 
-    int activeKeyLength = key.length - firstCharacterIdx;
+    unsigned long activeKeyLength = key.length - firstCharacterIdx;
 
-    DATA_LOCATION_TO_ULL(data + LEAF_USED_SIZE) = activeKeyLength;
+    DATA_LOCATION_TO_UL(data + LEAF_USED_SIZE) = activeKeyLength;
 
     memcpy((void*)(data + LEAF_USED_SIZE + sizeof(unsigned long)),
            (void*)(key.data + firstCharacterIdx), activeKeyLength);
 
-    LEAF_USED_SIZE += sizeof(unsigned long) + activeKeyLength;
+    DATA_LOCATION_TO_ULL(data + LEAF_USED_SIZE + sizeof(unsigned long) + activeKeyLength) = value;
+
+    DATA_LOCATION_TO_UL(data) += sizeof(unsigned long) + activeKeyLength + sizeof(unsigned long long);
 }
 
 void TrieLeaf::remove(const DatabaseKey &key, int firstCharacterIdx)
