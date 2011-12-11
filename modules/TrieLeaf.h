@@ -19,6 +19,7 @@ class TrieLeaf {
 private:
     unsigned char *find(const DatabaseKey &key, int firstCharacterIdx);
     void addBulk(unsigned char *source, unsigned long length);
+    int compareKeys(unsigned char *currentCharacter, unsigned char *endCharacter, const DatabaseKey &key, int firstCharacterIdx);
 
 public:
     unsigned char data[2 * TYPICAL_PAGE_SIZE];

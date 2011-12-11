@@ -24,21 +24,13 @@ unsigned char *TrieLeaf::find(const DatabaseKey &key, int firstCharacterIdx)
     unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
 
     while (currentLoc < (data + LEAF_USED_SIZE)) {
-        unsigned char *endCharacter = currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc);
-        const unsigned char *endKeyCharacter = key.data + key.length;
-        unsigned char *currentCharacter = currentLoc + sizeof(unsigned long);
-        const unsigned char *currentKeyCharacter = key.data + firstCharacterIdx;
 
-        while ((currentCharacter < endCharacter) &&
-               (currentKeyCharacter < endKeyCharacter) &&
-               (*currentCharacter == *currentKeyCharacter))
-        {
+        int strCompare = compareKeys(currentLoc + sizeof(unsigned long),
+                                     currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc),
+                                     key,
+                                     firstCharacterIdx);
 
-            currentCharacter++;
-            currentKeyCharacter++;
-        }
-
-        if ((currentCharacter == endCharacter) && (currentKeyCharacter == endKeyCharacter)) {
+        if (strCompare == 0) {
             return currentLoc;
         }
 
@@ -52,6 +44,35 @@ void TrieLeaf::addBulk(unsigned char *source, unsigned long length)
 {
     memcpy(data + LEAF_USED_SIZE, source, length);
     DATA_LOCATION_TO_UL(data) += length;
+}
+
+int TrieLeaf::compareKeys(unsigned char *currentCharacter, unsigned char *endCharacter, const DatabaseKey &key, int firstCharacterIdx)
+{
+    const unsigned char *endKeyCharacter = key.data + key.length;
+    const unsigned char *currentKeyCharacter = key.data + firstCharacterIdx;
+
+    while ((currentCharacter < endCharacter) &&
+           (currentKeyCharacter < endKeyCharacter) &&
+           (*currentCharacter == *currentKeyCharacter))
+    {
+
+        currentCharacter++;
+        currentKeyCharacter++;
+    }
+
+    int strCompare = 0;
+
+    if ((currentCharacter == endCharacter) && (currentKeyCharacter == endKeyCharacter)) {
+        return 0;
+    } else
+    if (currentCharacter == endCharacter) {
+        return 1;
+    } else
+    if (currentKeyCharacter == endKeyCharacter) {
+        return -1;
+    } else {
+        return *currentCharacter > *currentKeyCharacter ? -1 : 1;
+    }
 }
 
 unsigned long long TrieLeaf::get(const DatabaseKey &key, int firstCharacterIdx)
@@ -110,33 +131,10 @@ void TrieLeaf::moveAllBelowToAnotherLeaf(const DatabaseKey &key, int firstCharac
     while (currentLoc < (data + LEAF_USED_SIZE)) {
         unsigned long currentSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(unsigned long long);
 
-        unsigned char *endCharacter = currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc);
-        const unsigned char *endKeyCharacter = key.data + key.length;
-        unsigned char *currentCharacter = currentLoc + sizeof(unsigned long);
-        const unsigned char *currentKeyCharacter = key.data + firstCharacterIdx;
-
-        while ((currentCharacter < endCharacter) &&
-               (currentKeyCharacter < endKeyCharacter) &&
-               (*currentCharacter == *currentKeyCharacter))
-        {
-
-            currentCharacter++;
-            currentKeyCharacter++;
-        }
-
-        int strCompare = 0;
-
-        if ((currentCharacter == endCharacter) && (currentKeyCharacter == endKeyCharacter)) {
-            strCompare = 0;
-        } else
-        if (currentCharacter == endCharacter) {
-            strCompare = 1;
-        } else
-        if (currentKeyCharacter == endKeyCharacter) {
-            strCompare = -1;
-        } else {
-            strCompare = *currentCharacter > *currentKeyCharacter ? -1 : 1;
-        }
+        int strCompare = compareKeys(currentLoc + sizeof(unsigned long),
+                                     currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc),
+                                     key,
+                                     firstCharacterIdx);
 
         if (strCompare > 0) {
             anotherLeaf.addBulk(currentLoc, currentSlotSize);
