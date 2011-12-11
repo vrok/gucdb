@@ -17,15 +17,14 @@ namespace Db {
 
 class TrieLeaf {
 private:
-    void vacuum();
-
-    unsigned char *find(const DatabaseKey &key, int firstCharactedIdx);
+    unsigned char *find(const DatabaseKey &key, int firstCharacterIdx);
+    void addBulk(unsigned char *source, unsigned long length);
 
 public:
     unsigned char data[2 * TYPICAL_PAGE_SIZE];
 
     bool canFit(const DatabaseKey &key, int firstCharacterIdx);
-    unsigned long long get(const DatabaseKey &key, int firstCharactedIdx);
+    unsigned long long get(const DatabaseKey &key, int firstCharactrdIdx);
     void add(const DatabaseKey &key, int firstCharacterIdx, unsigned long long value);
     void remove(const DatabaseKey &key, int firstCharacterIdx);
     void moveAllBelowToAnotherLeaf(const DatabaseKey &key, int firstCharacterIdx, TrieLeaf &anotherLeaf);
