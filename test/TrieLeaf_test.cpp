@@ -74,7 +74,6 @@ TEST_F(TrieLeafTest, TestSomeGetsAndSets)
     ASSERT_EQ(5000, leaf.get(key2, 0));
 }
 
-#if 0
 TEST_F(TrieLeafTest, TestRemove)
 {
     Db::DatabaseKey key;
@@ -90,7 +89,36 @@ TEST_F(TrieLeafTest, TestRemove)
 
     ASSERT_EQ(0, leaf.get(key, 0));
 }
-#endif
+
+TEST_F(TrieLeafTest, TestRemoveTwo)
+{
+    Db::DatabaseKey key1, key2;
+    string key1_data = "test123";
+    string key2_data = "tere fere dutki";
+
+    memcpy((void*) key1.data, (void*) key1_data.c_str(), key1_data.length());
+    memcpy((void*) key2.data, (void*) key2_data.c_str(), key2_data.length());
+
+    key1.length = key1_data.length();
+    key2.length = key2_data.length();
+
+    leaf.add(key1, 0, 3000);
+    leaf.add(key2, 0, 5000);
+
+    ASSERT_EQ(3000, leaf.get(key1, 0));
+    ASSERT_EQ(5000, leaf.get(key2, 0));
+
+    leaf.remove(key1, 0);
+
+    ASSERT_EQ(0, leaf.get(key1, 0));
+    ASSERT_EQ(5000, leaf.get(key2, 0));
+
+    leaf.remove(key2, 0);
+
+    ASSERT_EQ(0, leaf.get(key1, 0));
+    ASSERT_EQ(0, leaf.get(key2, 0));
+}
+
 
 } // namespace
 

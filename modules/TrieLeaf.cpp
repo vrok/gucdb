@@ -75,6 +75,21 @@ void TrieLeaf::add(const DatabaseKey &key, int firstCharacterIdx, unsigned long 
 
 void TrieLeaf::remove(const DatabaseKey &key, int firstCharacterIdx)
 {
+    unsigned char *searchResult = find(key, firstCharacterIdx);
+    if (searchResult == NULL) {
+        return;
+    }
+
+    unsigned long deletedSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(searchResult) + sizeof(unsigned long long);
+    unsigned char *currentLoc = searchResult + deletedSlotSize;
+
+    while (currentLoc < (data + LEAF_USED_SIZE)) {
+        unsigned long currentSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(unsigned long long);
+        memmove(currentLoc - deletedSlotSize, currentLoc, currentSlotSize);
+        currentLoc += currentSlotSize;
+    }
+
+    DATA_LOCATION_TO_UL(data) -= deletedSlotSize;
 }
 
 bool TrieLeaf::canFit(const DatabaseKey &key, int firstCharacterIdx)
