@@ -28,6 +28,18 @@ void TrieNode::setChildrenRange(unsigned char firstCharacter,
     }
 }
 
+bool TrieNode::isLinkPure(unsigned char character)
+{
+    if (character == 0) {
+        return children[character + 1] != children[character];
+    } else
+    if (character == (NODE_SIZE - 1)) {
+        return children[character - 1] != children[character];
+    } else {
+        return (children[character - 1] != children[character]) && (children[character + 1] != children[character]);
+    }
+}
+
 }
 
 /* namespace Db */

@@ -17,9 +17,13 @@ namespace Db {
 struct TrieNode {
     TriePointer children[NODE_SIZE];
 
+    unsigned long long value;
+
     void setChild(unsigned char character, const TriePointer &childPointer);
 
     void setChildrenRange(unsigned char firstCharacter, unsigned char lastCharacter, const TriePointer &childPointer);
+
+    bool isLinkPure(unsigned char character);
 };
 
 } /* namespace Db */

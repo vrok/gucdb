@@ -11,6 +11,7 @@
 #include <string>
 
 #include "BinFile.h"
+#include "DatabaseKey.h"
 #include "BinFileMap.h"
 #include "TrieNode.h"
 #include "TrieLeaf.h"
@@ -29,6 +30,7 @@ public:
 	~Trie();
 
 	void initializeEmpty();
+	void addKey(const DatabaseKey &key);
 };
 
 } /* namespace Db */

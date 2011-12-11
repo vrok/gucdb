@@ -56,11 +56,47 @@ void Trie::initializeEmpty() {
     unsigned long long leafID = leaves->getNewBinByID();
 
     if (leafID == -1) {
-        cerr << __FILE__ << ":" << __LINE__ << " Couldn't fetch new leaf" << endl;\
+        cerr << __FILE__ << ":" << __LINE__ << " Couldn't fetch a new leaf" << endl;\
         return;
     }
 
     rootNode->setChildrenRange(0x00, 0xff, TriePointer(true, leafID));
+}
+
+void Trie::addKey(const DatabaseKey &key) {
+    TrieNode *currentNode = nodes->getBin(0); // root node always has id = 0
+
+    int currentCharIdx = 0;
+
+    TriePointer *currentPointer = &currentNode->children[key.data[currentCharIdx]];
+
+    while (true) {
+        currentCharIdx++;
+
+        if (currentCharIdx == key.length) {
+            /* The whole word had been eaten, and we haven't reached any leaf
+             * node yet. We'll set the value pointer in the non-leaf node.
+             */
+
+            //currentNode->
+
+            return;
+        }
+
+        if (currentPointer->leaf == 0) {
+             currentNode = nodes->getBin(currentPointer->link);
+             currentPointer = &currentNode->children[key.data[currentCharIdx]];
+        } else {
+
+        }
+    }
+
+#if 0
+    while ((currentPointer->leaf != 0) && (++currentCharIdx < key.length)) {
+
+    }
+#endif
+
 }
 
 } /* namespace Db */

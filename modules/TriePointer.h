@@ -15,6 +15,9 @@ struct TriePointer {
 
     unsigned char leaf : 1;
     unsigned long long int link : 63;
+
+    bool operator== (const TriePointer &pointer);
+    bool operator!= (const TriePointer &pointer);
 };
 
 } /* namespace Db */
