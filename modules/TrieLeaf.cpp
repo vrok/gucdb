@@ -18,7 +18,7 @@ namespace Db {
 #define LEAF_USED_SIZE              (DATA_LOCATION_TO_UL(data) + sizeof(unsigned long))
 #define DATA_AFTER_LEAF_USED_SIZE   (data + sizeof(unsigned long))
 
-unsigned long long TrieLeaf::get(const DatabaseKey &key, int firstCharactedIdx)
+unsigned char *TrieLeaf::find(const DatabaseKey &key, int firstCharactedIdx)
 {
     unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
 
@@ -38,13 +38,23 @@ unsigned long long TrieLeaf::get(const DatabaseKey &key, int firstCharactedIdx)
         }
 
         if ((currentCharacter == endCharacter) && (currentKeyCharacter == endKeyCharacter)) {
-            return DATA_LOCATION_TO_ULL(currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc));
+            return currentLoc;
         }
 
         currentLoc += sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(unsigned long long);
     }
 
-    return 0;
+    return NULL;
+}
+
+unsigned long long TrieLeaf::get(const DatabaseKey &key, int firstCharactedIdx)
+{
+    unsigned char *searchResult = find(key, firstCharactedIdx);
+    if (searchResult == NULL) {
+        return 0;
+    }
+
+    return DATA_LOCATION_TO_ULL(searchResult + sizeof(unsigned long) + DATA_LOCATION_TO_UL(searchResult));
 }
 
 void TrieLeaf::add(const DatabaseKey &key, int firstCharacterIdx, unsigned long long value)

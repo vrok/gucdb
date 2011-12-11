@@ -19,6 +19,8 @@ class TrieLeaf {
 private:
     void vacuum();
 
+    unsigned char *find(const DatabaseKey &key, int firstCharactedIdx);
+
 public:
     unsigned char data[2 * TYPICAL_PAGE_SIZE];
 
