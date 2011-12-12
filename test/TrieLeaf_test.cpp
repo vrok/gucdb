@@ -120,6 +120,21 @@ TEST_F(TrieLeafTest, TestRemoveTwo)
     ASSERT_EQ(0, leaf.get(key2, 0));
 }
 
+TEST_F(TrieLeafTest, TestEmptyKey)
+{
+    Db::DatabaseKey key;
+    string key_data = "";
+
+    memcpy((void*) key.data, (void*) key_data.c_str(), key_data.length());
+    key.length = key_data.length();
+
+    ASSERT_EQ(0, leaf.get(key, 0));
+
+    leaf.add(key, 0, 2357);
+
+    ASSERT_EQ(2357, leaf.get(key, 0));
+}
+
 TEST_F(TrieLeafTest, TestMoveToAnother)
 {
     Db::DatabaseKey key1, key2;
@@ -153,6 +168,36 @@ TEST_F(TrieLeafTest, TestMoveToAnother)
 
     ASSERT_EQ(3000, anotherLeaf.get(key1, 0));
     ASSERT_EQ(0, anotherLeaf.get(key2, 0));
+}
+
+TEST_F(TrieLeafTest, TestMoveToAnotherDivideByExisting)
+{
+    /* Key equal to the divider should not be moved. */
+
+    Db::DatabaseKey key;
+    string key1_data = "abcd";
+
+    memcpy((void*) key.data, (void*) key1_data.c_str(), key1_data.length());
+
+    key.length = key1_data.length();
+
+    leaf.add(key, 0, 3000);
+
+    ASSERT_EQ(3000, leaf.get(key, 0));
+
+    Db::TrieLeaf anotherLeaf;
+    memset((void*) &anotherLeaf, 0, sizeof(anotherLeaf));
+
+    Db::DatabaseKey dividing_key;
+    string dividing_data = "abcd";
+    memcpy((void*) dividing_key.data, (void*) dividing_data.c_str(), dividing_data.length());
+    dividing_key.length = dividing_data.length();
+
+    leaf.moveAllBelowToAnotherLeaf(dividing_key, 0, anotherLeaf);
+
+    ASSERT_EQ(3000, leaf.get(key, 0));
+
+    ASSERT_EQ(0, anotherLeaf.get(key, 0));
 }
 
 TEST_F(TrieLeafTest, TestBulkMoveToAnother)

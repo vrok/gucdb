@@ -40,6 +40,32 @@ bool TrieNode::isLinkPure(unsigned char character)
     }
 }
 
+unsigned char TrieNode::checkLeftmostCharWithLink(unsigned char initialCharacter, const TriePointer &childPointer)
+{
+    unsigned char currentCharacter = initialCharacter;
+
+    while (children[currentCharacter] == childPointer) {
+        currentCharacter--;
+
+        if (currentCharacter == 0)
+            return currentCharacter;
+    }
+
+    return currentCharacter++;
 }
 
-/* namespace Db */
+unsigned char TrieNode::checkRightmostCharWithLink(unsigned char initialCharacter, const TriePointer &childPointer)
+{
+    unsigned char currentCharacter = initialCharacter;
+
+    while (children[currentCharacter] == childPointer) {
+        currentCharacter++;
+
+        if (currentCharacter == (NODE_SIZE - 1))
+            return currentCharacter;
+    }
+
+    return currentCharacter--;
+}
+
+} /* namespace Db */

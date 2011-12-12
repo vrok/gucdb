@@ -9,6 +9,7 @@ MMapedFile.cpp
 BinFileMap.cpp
 BinFile.cpp
 TriePointer.cpp
+DatabaseKey.cpp
 """)
 
 TEST_DIR = 'test/'

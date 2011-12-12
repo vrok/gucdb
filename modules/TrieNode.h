@@ -24,6 +24,10 @@ struct TrieNode {
     void setChildrenRange(unsigned char firstCharacter, unsigned char lastCharacter, const TriePointer &childPointer);
 
     bool isLinkPure(unsigned char character);
+
+    unsigned char checkLeftmostCharWithLink(unsigned char initialCharacter, const TriePointer &childPointer);
+
+    unsigned char checkRightmostCharWithLink(unsigned char initialCharacter, const TriePointer &childPointer);
 };
 
 } /* namespace Db */

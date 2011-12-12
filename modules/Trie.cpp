@@ -63,7 +63,7 @@ void Trie::initializeEmpty() {
     rootNode->setChildrenRange(0x00, 0xff, TriePointer(true, leafID));
 }
 
-void Trie::addKey(const DatabaseKey &key) {
+void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
     TrieNode *currentNode = nodes->getBin(0); // root node always has id = 0
 
     int currentCharIdx = 0;
@@ -71,6 +71,9 @@ void Trie::addKey(const DatabaseKey &key) {
     TriePointer *currentPointer = &currentNode->children[key.data[currentCharIdx]];
 
     while (true) {
+
+        bool isLinkPure = currentNode->isLinkPure(key.data[currentCharIdx]);
+
         currentCharIdx++;
 
         if (currentCharIdx == key.length) {
@@ -78,16 +81,37 @@ void Trie::addKey(const DatabaseKey &key) {
              * node yet. We'll set the value pointer in the non-leaf node.
              */
 
-            //currentNode->
-
+            currentNode->value = value;
             return;
         }
 
         if (currentPointer->leaf == 0) {
-             currentNode = nodes->getBin(currentPointer->link);
-             currentPointer = &currentNode->children[key.data[currentCharIdx]];
+            currentNode = nodes->getBin(currentPointer->link);
+            currentPointer = &currentNode->children[key.data[currentCharIdx]];
         } else {
+            TrieLeaf *leaf = leaves->getBin(currentPointer->link);
 
+            while (true) {
+                if (leaf->canFit(key, currentCharIdx)) {
+                    leaf->add(key, currentCharIdx, value);
+                    break;
+                } else
+                if (isLinkPure) {
+
+                } else {
+                    unsigned long long newLeafId = leaves->getNewBinByID();
+                    TrieLeaf *newLeaf = leaves->getBin(newLeafId);
+
+                    DatabaseKey dividingKey;
+                    dividingKey.data[0] = key.data[currentCharIdx];
+                    dividingKey.length = 1;
+
+                    leaf->moveAllBelowToAnotherLeaf(key, 0, *newLeaf);
+
+                    //currentNode->setChildrenRange(currentNode->checkLeftmostCharWithLink(currentCharIdx, currentPointer),
+                    //                              currentPointer)
+                }
+            }
         }
     }
 
