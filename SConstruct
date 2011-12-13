@@ -12,20 +12,43 @@ TriePointer.cpp
 DatabaseKey.cpp
 """)
 
-TEST_DIR = 'test/'
+TEST_DIR = 'test'
 GTEST_DIR = 'test/gtest-1.6.0/'
 
-modules = ['modules/%s' % x for x in modules]
+modules_full = ['modules/%s' % x for x in modules]
 
 env = Environment()
 env['CCFLAGS'] = '-ggdb'
 
-db_binary = env.Program(target='db', source=['main.cpp'] + modules)
+env.StaticLibrary(target='modules_lib', source = modules_full)
+
+db_binary = env.Program(target='db', source=['main.cpp'], LIBS=['modules_lib'], LIBPATH='.')
 
 Default(db_binary)
 
-trie_leaf_test = env.Program(target='trie_leaf_test',
-                             source=['modules/TrieLeaf.cpp', 'modules/DatabaseKey.cpp', TEST_DIR + 'TrieLeaf_test.cpp', GTEST_DIR + 'src/gtest-all.cc'],
-                             CPPPATH=['modules', GTEST_DIR, GTEST_DIR + 'include'],
-                             LINKFLAGS=['-pthread']) 
+import re
+import os.path as path
+
+env.StaticLibrary(target='gtest_lib',
+                  source=[GTEST_DIR + 'src/gtest-all.cc'],
+                  CPPPATH=['modules', GTEST_DIR, GTEST_DIR + 'include'],
+                  LINKFLAGS=['-pthread'])
+
+for module in modules:
+
+    test_file_name = '%s/%s_test.cpp' % (TEST_DIR, module.rstrip('.cpp'))
+
+    if not module.endswith('.cpp') or not path.isfile(test_file_name):
+        continue
+
+    base_module_name = re.sub('([A-Z])',
+                              lambda l: '_' + l.group(1).lower(),
+                              module.rstrip('.cpp')) \
+                       .strip('_')
+
+    env.Program(target=base_module_name + '_test',
+                source=[test_file_name],
+                CPPPATH=['modules', GTEST_DIR, GTEST_DIR + 'include'],
+                LINKFLAGS=['-pthread'],
+                LIBS=['modules_lib', 'gtest_lib'], LIBPATH='.') 
 
