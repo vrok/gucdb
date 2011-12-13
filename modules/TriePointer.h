@@ -11,6 +11,7 @@
 namespace Db {
 
 struct TriePointer {
+    TriePointer();
     TriePointer(bool pointee_is_leaf, unsigned long long int pointee_id);
 
     unsigned char leaf : 1;

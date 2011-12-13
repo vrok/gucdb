@@ -45,13 +45,11 @@ unsigned char TrieNode::checkLeftmostCharWithLink(unsigned char initialCharacter
     unsigned char currentCharacter = initialCharacter;
 
     while (children[currentCharacter] == childPointer) {
-        currentCharacter--;
-
-        if (currentCharacter == 0)
+        if (--currentCharacter == 0)
             return currentCharacter;
     }
 
-    return currentCharacter++;
+    return currentCharacter + 1;
 }
 
 unsigned char TrieNode::checkRightmostCharWithLink(unsigned char initialCharacter, const TriePointer &childPointer)
@@ -59,13 +57,11 @@ unsigned char TrieNode::checkRightmostCharWithLink(unsigned char initialCharacte
     unsigned char currentCharacter = initialCharacter;
 
     while (children[currentCharacter] == childPointer) {
-        currentCharacter++;
-
-        if (currentCharacter == (NODE_SIZE - 1))
+        if (++currentCharacter == (NODE_SIZE - 1))
             return currentCharacter;
     }
 
-    return currentCharacter--;
+    return currentCharacter - 1;
 }
 
 } /* namespace Db */
