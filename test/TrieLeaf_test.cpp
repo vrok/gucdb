@@ -246,6 +246,51 @@ TEST_F(TrieLeafTest, TestBulkMoveToAnother)
     }
 }
 
+TEST_F(TrieLeafTest, TestFindBestSplit)
+{
+    for (int i = 100; i <= 900; i += 100) {
+        Db::DatabaseKey key;
+
+        stringstream intToStringConverter;
+        intToStringConverter << i;
+        string key_data = intToStringConverter.str();
+
+        memcpy((void*) key.data, (void*) key_data.c_str(), key_data.length());
+        key.length = key_data.length();
+
+        leaf.add(key, 0, i);
+    }
+
+    ASSERT_EQ('4', leaf.findBestSplitPoint());
+}
+
+TEST_F(TrieLeafTest, TestFindBestSplitFirstOccurenceOverwhelming)
+{
+    /* One character can occur as the first one so frequently, that the keys
+     * it starts have size that's bigger than half of the leaf. Normally we wouldn't
+     * include the first character exceeding half of the leaf size in the split,
+     * but since it is the first one with any occurence, we do it.
+     */
+    string key_data("bolek");
+    Db::DatabaseKey key;
+
+    memcpy((void*) key.data, (void*) key_data.c_str(), key_data.length());
+    key.length = key_data.length();
+
+    for (int i = 0; i < 20; i++) {
+        leaf.add(key, 0, i);
+    }
+
+    key_data = "test";
+
+    memcpy((void*) key.data, (void*) key_data.c_str(), key_data.length());
+    key.length = key_data.length();
+
+    leaf.add(key, 0, 1234);
+
+    ASSERT_EQ('b', leaf.findBestSplitPoint());
+}
+
 
 } // namespace
 

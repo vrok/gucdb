@@ -29,6 +29,8 @@ public:
     void add(const DatabaseKey &key, int firstCharacterIdx, unsigned long long value);
     void remove(const DatabaseKey &key, int firstCharacterIdx);
     void moveAllBelowToAnotherLeaf(const DatabaseKey &key, int firstCharacterIdx, TrieLeaf &anotherLeaf);
+    void divideIntoTwoBasedOnFirstChar(unsigned char comparator, TrieLeaf &anotherLeaf);
+    unsigned char findBestSplitPoint();
 };
 
 } /* namespace Db */

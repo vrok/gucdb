@@ -151,6 +151,55 @@ void TrieLeaf::moveAllBelowToAnotherLeaf(const DatabaseKey &key, int firstCharac
     DATA_LOCATION_TO_UL(data) -= shift;
 }
 
+unsigned char TrieLeaf::findBestSplitPoint()
+{
+    unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
+    unsigned long sizesPerFirstCharacter[256];
+    memset(sizesPerFirstCharacter, 0, sizeof(sizesPerFirstCharacter));
+
+    while (currentLoc < (data + LEAF_USED_SIZE)) {
+        unsigned long currentSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(unsigned long long);
+
+        assert(DATA_LOCATION_TO_UL(currentLoc) != 0); /* We can't get first character of an empty string. */
+
+        sizesPerFirstCharacter[*(currentLoc + sizeof(unsigned long))] += currentSlotSize;
+
+        currentLoc += currentSlotSize;
+    }
+
+    unsigned long currentAccumulatedSizes = 0;
+    unsigned long leafWithoutHeaderSize = LEAF_USED_SIZE - sizeof(unsigned long);
+
+    for (unsigned char i = 0; i < sizeof(sizesPerFirstCharacter); i++) {
+        if ((sizesPerFirstCharacter[i] + currentAccumulatedSizes) >= (leafWithoutHeaderSize / 2)) {
+            if (currentAccumulatedSizes > 0) {
+                return i - 1;
+            } else {
+                return i;
+            }
+        }
+
+        currentAccumulatedSizes += sizesPerFirstCharacter[i];
+    }
+
+    /* It should never end up here. */
+    return sizeof(unsigned int) - 1;
 }
+
+void TrieLeaf::divideIntoTwoBasedOnFirstChar(unsigned char comparator, TrieLeaf &anotherLeaf)
+{
+#if 0
+    unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
+    unsigned long shift = 0;
+
+    while (currentLoc < (data + LEAF_USED_SIZE)) {
+        unsigned long currentSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(unsigned long long);
+
+        if ((DATA_LOCATION_TO_UL(currentLoc) == 0
+    }
+#endif
+    }
+
+    }
 
 /* namespace Db */
