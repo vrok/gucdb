@@ -19,6 +19,7 @@ struct TriePointer {
 
     bool operator== (const TriePointer &pointer);
     bool operator!= (const TriePointer &pointer);
+    bool isNull();
 };
 
 } /* namespace Db */

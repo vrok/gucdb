@@ -26,4 +26,9 @@ bool TriePointer::operator !=(const TriePointer &pointer)
     return (pointer.leaf != leaf) || (pointer.link != link);
 }
 
+bool TriePointer::isNull()
+{
+    return (leaf == 0) && (link == 0);
+}
+
 } /* namespace Db */

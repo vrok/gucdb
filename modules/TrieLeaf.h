@@ -24,13 +24,16 @@ private:
 public:
     unsigned char data[2 * TYPICAL_PAGE_SIZE];
 
+    bool isEmpty();
     bool canFit(const DatabaseKey &key, int firstCharacterIdx);
     unsigned long long get(const DatabaseKey &key, int firstCharactrdIdx);
     void add(const DatabaseKey &key, int firstCharacterIdx, unsigned long long value);
     void remove(const DatabaseKey &key, int firstCharacterIdx);
     void moveAllBelowToAnotherLeaf(const DatabaseKey &key, int firstCharacterIdx, TrieLeaf &anotherLeaf);
+    void moveAllEqualOrBiggerToAnotherLeaf(unsigned char initialCharacter);
     void divideIntoTwoBasedOnFirstChar(unsigned char comparator, TrieLeaf &anotherLeaf);
     unsigned char findBestSplitPoint();
+    unsigned long long stripLeadingCharacter();
 };
 
 } /* namespace Db */

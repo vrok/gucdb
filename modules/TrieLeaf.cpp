@@ -60,8 +60,6 @@ int TrieLeaf::compareKeys(unsigned char *currentCharacter, unsigned char *endCha
         currentKeyCharacter++;
     }
 
-    int strCompare = 0;
-
     if ((currentCharacter == endCharacter) && (currentKeyCharacter == endKeyCharacter)) {
         return 0;
     } else
@@ -118,6 +116,12 @@ void TrieLeaf::remove(const DatabaseKey &key, int firstCharacterIdx)
     DATA_LOCATION_TO_UL(data) -= deletedSlotSize;
 }
 
+bool TrieLeaf::isEmpty()
+{
+    /* Empty node only stores its size in first few bytes. */
+    return LEAF_USED_SIZE == sizeof(unsigned long);
+}
+
 bool TrieLeaf::canFit(const DatabaseKey &key, int firstCharacterIdx)
 {
     return (key.length - firstCharacterIdx) <= (sizeof(data) - LEAF_USED_SIZE);
@@ -151,6 +155,10 @@ void TrieLeaf::moveAllBelowToAnotherLeaf(const DatabaseKey &key, int firstCharac
     DATA_LOCATION_TO_UL(data) -= shift;
 }
 
+void TrieLeaf::moveAllEqualOrBiggerToAnotherLeaf(unsigned char initialCharacter)
+{
+}
+
 unsigned char TrieLeaf::findBestSplitPoint()
 {
     unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
@@ -173,9 +181,9 @@ unsigned char TrieLeaf::findBestSplitPoint()
     for (unsigned char i = 0; i < sizeof(sizesPerFirstCharacter); i++) {
         if ((sizesPerFirstCharacter[i] + currentAccumulatedSizes) >= (leafWithoutHeaderSize / 2)) {
             if (currentAccumulatedSizes > 0) {
-                return i - 1;
-            } else {
                 return i;
+            } else {
+                return i + 1;
             }
         }
 
@@ -184,6 +192,39 @@ unsigned char TrieLeaf::findBestSplitPoint()
 
     /* It should never end up here. */
     return sizeof(unsigned int) - 1;
+}
+
+unsigned long long TrieLeaf::stripLeadingCharacter()
+{
+    unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
+    unsigned long long result = 0;
+    unsigned long shift = 0;
+
+    while (currentLoc < (data + LEAF_USED_SIZE)) {
+        unsigned long currentKeyLen = DATA_LOCATION_TO_UL(currentLoc);
+        unsigned long currentSlotSize = sizeof(unsigned long) + currentKeyLen + sizeof(unsigned long long);
+
+        if (DATA_LOCATION_TO_UL(currentLoc) == 1) {
+            /* Key ends exactly in the leaf. We are expanding vertically, thus this value should
+             * be moved upwards, to the newly created node.
+             */
+            result = DATA_LOCATION_TO_ULL(currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc));
+            shift += currentSlotSize;
+            currentLoc += currentSlotSize;
+            continue;
+        }
+
+        DATA_LOCATION_TO_UL(currentLoc - shift) = currentKeyLen - 1;
+        memmove(currentLoc + sizeof(unsigned long) - shift,
+                currentLoc + sizeof(unsigned long) + 1,
+                currentKeyLen - 1 + sizeof(unsigned long long));
+
+        shift++;
+        currentLoc += currentSlotSize;
+    }
+
+    DATA_LOCATION_TO_UL(data) -= shift;
+    return result;
 }
 
 void TrieLeaf::divideIntoTwoBasedOnFirstChar(unsigned char comparator, TrieLeaf &anotherLeaf)

@@ -64,63 +64,69 @@ void Trie::initializeEmpty() {
 }
 
 void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
-    TrieNode *currentNode = nodes->getBin(0); // root node always has id = 0
-
     int currentCharIdx = 0;
 
+    TrieNode *currentNode = nodes->getBin(0); // root node always has id = 0
     TriePointer *currentPointer = &currentNode->children[key.data[currentCharIdx]];
 
     while (true) {
-
         bool isLinkPure = currentNode->isLinkPure(key.data[currentCharIdx]);
 
-        currentCharIdx++;
-
-        if (currentCharIdx == key.length) {
-            /* The whole word had been eaten, and we haven't reached any leaf
-             * node yet. We'll set the value pointer in the non-leaf node.
-             */
-
-            currentNode->value = value;
-            return;
-        }
-
         if (currentPointer->leaf == 0) {
+            currentCharIdx++;
             currentNode = nodes->getBin(currentPointer->link);
             currentPointer = &currentNode->children[key.data[currentCharIdx]];
+
+            if (currentCharIdx == key.length) {
+                /* The whole word had been eaten, and we haven't reached any leaf
+                 * node yet. We'll set the value pointer in the non-leaf node.
+                 */
+
+                currentNode->value = value;
+                return;
+            }
         } else {
             TrieLeaf *leaf = leaves->getBin(currentPointer->link);
 
-            while (true) {
-                if (leaf->canFit(key, currentCharIdx)) {
-                    leaf->add(key, currentCharIdx, value);
-                    break;
-                } else
-                if (isLinkPure) {
+            if (leaf->canFit(key, currentCharIdx)) {
+                leaf->add(key, currentCharIdx, value);
+                return;
+            } else
+            if (isLinkPure) {
 
+            } else {
+                unsigned long long newLeafId = leaves->getNewBinByID();
+                TrieLeaf *newLeaf = leaves->getBin(newLeafId);
+
+                unsigned char splitPoint = leaf->findBestSplitPoint();
+
+                DatabaseKey dividingKey;
+                dividingKey.data[0] = key.data[splitPoint];
+                dividingKey.length = 1;
+
+                leaf->moveAllBelowToAnotherLeaf(key, 0, *newLeaf);
+
+                unsigned char leftmostCharWithCurrentLink = currentNode->checkLeftmostCharWithLink(splitPoint, *currentPointer);
+                unsigned char rightmostCharWithCurrentLink = currentNode->checkRightmostCharWithLink(splitPoint, *currentPointer);
+
+                if (newLeaf->isEmpty()) {
+                    leaves->freeBin(newLeafId);
+                    currentNode->setChildrenRange(leftmostCharWithCurrentLink, splitPoint - 1, TriePointer());
                 } else {
-                    unsigned long long newLeafId = leaves->getNewBinByID();
-                    TrieLeaf *newLeaf = leaves->getBin(newLeafId);
+                    currentNode->setChildrenRange(leftmostCharWithCurrentLink, splitPoint - 1, *currentPointer);
+                }
 
-                    DatabaseKey dividingKey;
-                    dividingKey.data[0] = key.data[currentCharIdx];
-                    dividingKey.length = 1;
-
-                    leaf->moveAllBelowToAnotherLeaf(key, 0, *newLeaf);
-
-                    //currentNode->setChildrenRange(currentNode->checkLeftmostCharWithLink(currentCharIdx, currentPointer),
-                    //                              currentPointer)
+                if (leaf->isEmpty()) {
+                    leaf->add(key, currentCharIdx, value);
+                    return;
+                    //leaves->freeBin(currentPointer->link);
+                    //currentNode->setChildrenRange(splitPoint, rightmostCharWithCurrentLink, TriePointer());
+                } else {
+                    currentNode->setChildrenRange(splitPoint, rightmostCharWithCurrentLink, TriePointer(true, newLeafId));
                 }
             }
         }
     }
-
-#if 0
-    while ((currentPointer->leaf != 0) && (++currentCharIdx < key.length)) {
-
-    }
-#endif
-
 }
 
 } /* namespace Db */

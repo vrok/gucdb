@@ -49,6 +49,23 @@ TEST_F(TrieLeafTest, TestSimpleGetAddGet)
     ASSERT_EQ(2357, leaf.get(key, 0));
 }
 
+TEST_F(TrieLeafTest, TestGetSubstring)
+{
+    Db::DatabaseKey key1, key2;
+    string key1_data = "test123";
+    string key2_data = "ASDFtest123";
+
+    memcpy((void*) key1.data, (void*) key1_data.c_str(), key1_data.length());
+    memcpy((void*) key2.data, (void*) key2_data.c_str(), key2_data.length());
+    key1.length = key1_data.length();
+    key2.length = key2_data.length();
+
+    leaf.add(key1, 0, 2357);
+
+    ASSERT_EQ(2357, leaf.get(key1, 0));
+    ASSERT_EQ(2357, leaf.get(key2, 4));
+}
+
 TEST_F(TrieLeafTest, TestSomeGetsAndSets)
 {
     Db::DatabaseKey key1, key2;
@@ -261,7 +278,7 @@ TEST_F(TrieLeafTest, TestFindBestSplit)
         leaf.add(key, 0, i);
     }
 
-    ASSERT_EQ('4', leaf.findBestSplitPoint());
+    ASSERT_EQ('5', leaf.findBestSplitPoint());
 }
 
 TEST_F(TrieLeafTest, TestFindBestSplitFirstOccurenceOverwhelming)
@@ -288,7 +305,116 @@ TEST_F(TrieLeafTest, TestFindBestSplitFirstOccurenceOverwhelming)
 
     leaf.add(key, 0, 1234);
 
-    ASSERT_EQ('b', leaf.findBestSplitPoint());
+    ASSERT_EQ('c', leaf.findBestSplitPoint());
+}
+
+TEST_F(TrieLeafTest, TestFindBestSplitLastOccurenceOverwhelming)
+{
+    string key_data("test");
+    Db::DatabaseKey key;
+
+    memcpy((void*) key.data, (void*) key_data.c_str(), key_data.length());
+    key.length = key_data.length();
+
+    for (int i = 0; i < 20; i++) {
+        leaf.add(key, 0, i);
+    }
+
+    key_data = "bolek";
+
+    memcpy((void*) key.data, (void*) key_data.c_str(), key_data.length());
+    key.length = key_data.length();
+
+    leaf.add(key, 0, 1234);
+
+    ASSERT_EQ('t', leaf.findBestSplitPoint());
+}
+
+TEST_F(TrieLeafTest, TestFindBestSplitOnlyOneInitialChar)
+{
+    string key_data("test");
+    Db::DatabaseKey key;
+
+    memcpy((void*) key.data, (void*) key_data.c_str(), key_data.length());
+    key.length = key_data.length();
+
+    for (int i = 0; i < 20; i++) {
+        leaf.add(key, 0, i);
+    }
+
+    ASSERT_EQ('t', leaf.findBestSplitPoint());
+}
+
+TEST_F(TrieLeafTest, TestIsEmpty)
+{
+    string key_data("test");
+    Db::DatabaseKey key;
+
+    memcpy((void*) key.data, (void*) key_data.c_str(), key_data.length());
+    key.length = key_data.length();
+
+    ASSERT_TRUE(leaf.isEmpty());
+
+    leaf.add(key, 0, 1234);
+
+    ASSERT_FALSE(leaf.isEmpty());
+}
+
+TEST_F(TrieLeafTest, TestStripOneLeadingCharacter)
+{
+    string key_data("test");
+    Db::DatabaseKey key;
+
+    memcpy((void*) key.data, (void*) key_data.c_str(), key_data.length());
+    key.length = key_data.length();
+
+    leaf.add(key, 0, 1234);
+
+    ASSERT_EQ(0, leaf.stripLeadingCharacter());
+
+    ASSERT_EQ(0, leaf.get(key, 0));
+    ASSERT_EQ(1234, leaf.get(key, 1));
+}
+
+TEST_F(TrieLeafTest, TestStripSingleLeadingCharacter)
+{
+    string key_data("t");
+    Db::DatabaseKey key;
+
+    memcpy((void*) key.data, (void*) key_data.c_str(), key_data.length());
+    key.length = key_data.length();
+
+    leaf.add(key, 0, 1234);
+
+    ASSERT_EQ(1234, leaf.stripLeadingCharacter());
+
+    ASSERT_TRUE(leaf.isEmpty());
+}
+
+TEST_F(TrieLeafTest, TestStripMultipleCharacters)
+{
+    Db::DatabaseKey key1, key2, key3;
+    string key1_data = "abcd";
+    string key2_data = "zzzzz";
+    string key3_data = "e";
+
+    memcpy((void*) key1.data, (void*) key1_data.c_str(), key1_data.length());
+    memcpy((void*) key2.data, (void*) key2_data.c_str(), key2_data.length());
+    memcpy((void*) key3.data, (void*) key3_data.c_str(), key3_data.length());
+
+    key1.length = key1_data.length();
+    key2.length = key2_data.length();
+    key3.length = key3_data.length();
+
+    leaf.add(key1, 0, 3000);
+    leaf.add(key2, 0, 5000);
+    leaf.add(key3, 0, 7000);
+
+    ASSERT_EQ(7000, leaf.stripLeadingCharacter());
+
+    ASSERT_EQ(3000, leaf.get(key1, 1));
+    ASSERT_EQ(5000, leaf.get(key2, 1));
+    ASSERT_EQ(0, leaf.get(key3, 1));
 }
 
 
