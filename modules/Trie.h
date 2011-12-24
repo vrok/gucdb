@@ -30,7 +30,8 @@ public:
 	~Trie();
 
 	void initializeEmpty();
-	void addKey(const DatabaseKey &key, unsigned long long value);
+    void addKey(const DatabaseKey &key, unsigned long long value);
+    unsigned long long get(const DatabaseKey &key);
 };
 
 } /* namespace Db */

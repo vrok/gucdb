@@ -63,19 +63,45 @@ void Trie::initializeEmpty() {
     rootNode->setChildrenRange(0x00, 0xff, TriePointer(true, leafID));
 }
 
-void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
+unsigned long long Trie::get(const DatabaseKey &key) {
     int currentCharIdx = 0;
 
-    TrieNode *currentNode = nodes->getBin(0); // root node always has id = 0
-    TriePointer *currentPointer = &currentNode->children[key.data[currentCharIdx]];
+    TrieNode *currentNode = nodes->getBin(0);
 
     while (true) {
-        bool isLinkPure = currentNode->isLinkPure(key.data[currentCharIdx]);
+        TriePointer *currentPointer = &currentNode->children[key.data[currentCharIdx]];
 
         if (currentPointer->leaf == 0) {
             currentCharIdx++;
             currentNode = nodes->getBin(currentPointer->link);
-            currentPointer = &currentNode->children[key.data[currentCharIdx]];
+
+            if (currentCharIdx == key.length) {
+                return currentNode->value;
+            }
+        } else {
+            TrieLeaf *leaf = leaves->getBin(currentPointer->link);
+            return leaf->get(key, currentCharIdx + 1);
+        }
+    }
+
+    cerr << __FILE__ << ":" << __LINE__ << " Reached line that should not be reached" << endl;
+    return 0;
+}
+
+void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
+    int currentCharIdx = 0;
+
+    TrieNode *currentNode = nodes->getBin(0); // root node always has id = 0
+    //TriePointer *currentPointer = &currentNode->children[key.data[currentCharIdx]];
+
+    while (true) {
+        bool isLinkPure = currentNode->isLinkPure(key.data[currentCharIdx]);
+        TriePointer *currentPointer = &currentNode->children[key.data[currentCharIdx]];
+
+        if (currentPointer->leaf == 0) {
+            currentCharIdx++;
+            currentNode = nodes->getBin(currentPointer->link);
+            //currentPointer = &currentNode->children[key.data[currentCharIdx]];
 
             if (currentCharIdx == key.length) {
                 /* The whole word had been eaten, and we haven't reached any leaf
@@ -93,7 +119,24 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
                 return;
             } else
             if (isLinkPure) {
+                unsigned long long newNodeValue = leaf->stripLeadingCharacter();
 
+                TriePointer newPointer;
+                if (leaf->isEmpty()) {
+                    leaves->freeBin(currentPointer->link);
+                } else {
+                    newPointer.leaf = 1;
+                    newPointer.link = currentPointer->link;
+                }
+
+                unsigned long long newNodeIndex = nodes->getNewBinByID();
+                TrieNode *newNode = nodes->getBin(newNodeIndex);
+                currentPointer->leaf = 0;
+                currentPointer->link = newNodeIndex;
+                newNode->setChildrenRange(0, 255, newPointer);
+
+                currentCharIdx++;
+                currentNode = newNode;
             } else {
                 unsigned long long newLeafId = leaves->getNewBinByID();
                 TrieLeaf *newLeaf = leaves->getBin(newLeafId);
