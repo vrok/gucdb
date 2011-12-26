@@ -28,6 +28,21 @@ namespace Db {
 Trie::Trie(BinFile<TrieNode> *nodes, BinFile<TrieLeaf> *leaves)
     : nodes(nodes), leaves(leaves) {
 
+    switch (leaves->openMMapedFile()) {
+    case MMapedFile::OPENED:
+        break;
+    case MMapedFile::NEW_FILE:
+        //initializeEmpty();
+        break;
+    case MMapedFile::ERROR:
+    default:
+        cerr << "Opening leaves file failed" << endl;
+        break;
+    }
+
+    cout << "Index leaves file opened" << endl;
+
+
     switch (nodes->openMMapedFile()) {
     case MMapedFile::OPENED:
         break;
@@ -41,6 +56,7 @@ Trie::Trie(BinFile<TrieNode> *nodes, BinFile<TrieLeaf> *leaves)
     }
 
     cout << "Index file opened" << endl;
+
 }
 
 Trie::~Trie() {
@@ -80,7 +96,7 @@ unsigned long long Trie::get(const DatabaseKey &key) {
             }
         } else {
             TrieLeaf *leaf = leaves->getBin(currentPointer->link);
-            return leaf->get(key, currentCharIdx + 1);
+            return leaf->get(key, currentCharIdx);
         }
     }
 

@@ -37,7 +37,7 @@ void BinFileMap::loadMapCache() {
             if ((*loc & (1 << j)) == 0) {
                 /* We've got an empty bin for trie node */
                 emptyBins.push(i * 8 + j);
-                cout << "Pushing empty loc " << (i * 8 + j) << endl;
+                //cout << "Pushing empty loc " << (i * 8 + j) << endl;
             }
         }
     }

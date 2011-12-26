@@ -5,6 +5,7 @@
  *      Author: m
  */
 
+#include <cstring>
 #include <string>
 #include <iostream>
 using namespace std;
@@ -46,12 +47,24 @@ Database::~Database()
     delete mainIndex;
 }
 
-char *Database::read(const char *key)
+unsigned long long Database::read(const char *key)
 {
+    DatabaseKey dbKey;
+    memcpy(dbKey.data, key, strlen(key));
+    dbKey.length = strlen(key);
+
+    return mainIndex->get(dbKey);
 }
 
-int Database::write(const char *key, const char *value)
+int Database::write(const char *key, unsigned long long value)
 {
+    DatabaseKey dbKey;
+    //dbKey.data = key;
+    memcpy(dbKey.data, key, strlen(key));
+    dbKey.length = strlen(key);
+
+    mainIndex->addKey(dbKey, value);
+    return 0;
 }
 
 } /* namespace Db */

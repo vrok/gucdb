@@ -19,8 +19,8 @@ public:
 	Database(const string &dbDirectory);
 	virtual ~Database();
 
-	char* read(const char *key);
-	int write(const char *key, const char *value);
+	unsigned long long read(const char *key);
+	int write(const char *key, unsigned long long value);
 };
 
 } /* namespace Db */
