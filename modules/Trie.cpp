@@ -13,6 +13,9 @@
 
 #include "Trie.h"
 
+
+#include <cstring>
+#include <cassert>
 #include <iostream>
 using namespace std;
 
@@ -186,6 +189,75 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
             }
         }
     }
+}
+
+void Trie::dump() {
+    int indendFactor = 4;
+    int indent = indendFactor;
+    string ind = "    ";
+    queue<unsigned long long> nodesQueue;
+    queue<unsigned long long> leavesQueue;
+    char tmpValue[1024];
+
+    nodesQueue.push(0);
+
+    cout << "<trie>" << endl;
+
+    while (! nodesQueue.empty()) {
+        unsigned long long currentId = nodesQueue.front();
+        nodesQueue.pop();
+        TrieNode *currentNode = nodes->getBin(currentId);
+
+        cout << ind << "<node id=\"" << currentId << "\">" << endl;
+
+        TriePointer *prevPointer = NULL;
+
+        for (int currentCharIdx = 0x00; currentCharIdx <= 0xff; currentCharIdx++) {
+            /* We can't use uchar in the loop, we would fall into infinite loop. */
+            unsigned char currentChar = (unsigned char) currentCharIdx;
+
+            TriePointer *currentPointer = &currentNode->children[currentChar];
+
+            if ((currentCharIdx == 0x00) || (*prevPointer != *currentPointer)) {
+                cout << ind << ind << "<from character=\"" << (int)currentChar;
+                if (! currentPointer->isNull()) {
+                    if (currentPointer->leaf == 1) {
+                        leavesQueue.push(currentPointer->link);
+                        cout << "\" type=\"leaf\" link=\"" << currentPointer->link << "\" />" << endl;
+                    } else {
+                        cout << "\" type=\"leaf\" link=\"" << currentPointer->link << "\" />" << endl;
+                    }
+                } else {
+                    cout << "\" type=\"NULL\" link=\"NULL\" />" << endl;
+                }
+
+                prevPointer = currentPointer;
+            }
+        }
+
+        cout << ind << "</node>" << endl;
+    }
+
+    while (! leavesQueue.empty()) {
+        unsigned long long currentId = leavesQueue.front();
+        leavesQueue.pop();
+        TrieLeaf *currentLeaf = leaves->getBin(currentId);
+        cout << ind << "<leaf id=\"" << currentId << "\">" << endl;
+
+        for (TrieLeafNavigator navigator = currentLeaf->produceNaviagor(); !navigator.isEnd(); navigator.next()) {
+            assert(navigator.getLength() < (sizeof(tmpValue) - 1));
+
+            strncpy(tmpValue, (char*) navigator.getPointer(), navigator.getLength());
+            tmpValue[navigator.getLength()] = 0x00;
+
+            string tmpS(tmpValue);
+            cout << ind << ind << "<item key=\"" << tmpS << "\" value=\"" << navigator.getValue() << "\" />" << endl;
+        }
+
+        cout << ind << "</leaf>" << endl;
+    }
+
+    cout << "</trie>" << endl;
 }
 
 } /* namespace Db */

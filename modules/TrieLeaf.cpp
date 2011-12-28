@@ -13,11 +13,12 @@
 
 namespace Db {
 
-#define DATA_LOCATION_TO_UL(loc)    (*((unsigned long*)(loc)))
-#define DATA_LOCATION_TO_ULL(loc)   (*((unsigned long long*)(loc)))
+#define DATA_LOCATION_TO_UL(loc)         (*((unsigned long*)(loc)))
+#define DATA_LOCATION_TO_ULL(loc)        (*((unsigned long long*)(loc)))
 /* Used size is stored in the first location of the data array. */
-#define LEAF_USED_SIZE              (DATA_LOCATION_TO_UL(data) + sizeof(unsigned long))
-#define DATA_AFTER_LEAF_USED_SIZE   (data + sizeof(unsigned long))
+#define LEAF_USED_SIZE                   (DATA_LOCATION_TO_UL(data) + sizeof(unsigned long))
+#define OTHER_LEAF_USED_SIZE(leaf_ptr)   (DATA_LOCATION_TO_UL(leaf_ptr->data) + sizeof(unsigned long))
+#define DATA_AFTER_LEAF_USED_SIZE        (data + sizeof(unsigned long))
 
 unsigned char *TrieLeaf::find(const DatabaseKey &key, int firstCharacterIdx)
 {
@@ -124,7 +125,7 @@ bool TrieLeaf::isEmpty()
 
 bool TrieLeaf::canFit(const DatabaseKey &key, int firstCharacterIdx)
 {
-    return (key.length - firstCharacterIdx) <= (sizeof(data) - LEAF_USED_SIZE);
+    return (key.length - firstCharacterIdx + sizeof(unsigned int) + sizeof(unsigned long long)) <= (sizeof(data) - LEAF_USED_SIZE);
 }
 
 void TrieLeaf::moveAllBelowToAnotherLeaf(const DatabaseKey &key, int firstCharacterIdx, TrieLeaf &anotherLeaf)
@@ -239,8 +240,39 @@ void TrieLeaf::divideIntoTwoBasedOnFirstChar(unsigned char comparator, TrieLeaf 
         if ((DATA_LOCATION_TO_UL(currentLoc) == 0
     }
 #endif
-    }
+}
 
-    }
+TrieLeafNavigator TrieLeaf::produceNaviagor()
+{
+    return TrieLeafNavigator(DATA_AFTER_LEAF_USED_SIZE, this);
+}
+
+
+TrieLeafNavigator::TrieLeafNavigator(unsigned char *currentLoc, TrieLeaf *context)
+        : currentLoc(currentLoc), context(context) {
+}
+
+unsigned char* TrieLeafNavigator::getPointer() {
+    return currentLoc + sizeof(unsigned long);
+}
+
+unsigned int TrieLeafNavigator::getLength() {
+    return DATA_LOCATION_TO_UL(currentLoc);
+}
+
+unsigned long long TrieLeafNavigator::getValue() {
+    return DATA_LOCATION_TO_ULL(currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc));
+}
+
+void TrieLeafNavigator::next() {
+    currentLoc += sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(unsigned long long);
+}
+
+bool TrieLeafNavigator::isEnd() {
+    return currentLoc >= (context->data + OTHER_LEAF_USED_SIZE(context));
+}
+
+
+}
 
 /* namespace Db */

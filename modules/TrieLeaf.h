@@ -15,6 +15,9 @@ namespace Db {
 // We might prefer to use actual page size.
 #define TYPICAL_PAGE_SIZE 4096
 
+class TrieLeafNavigator;
+
+
 class TrieLeaf {
 private:
     unsigned char *find(const DatabaseKey &key, int firstCharacterIdx);
@@ -34,7 +37,28 @@ public:
     void divideIntoTwoBasedOnFirstChar(unsigned char comparator, TrieLeaf &anotherLeaf);
     unsigned char findBestSplitPoint();
     unsigned long long stripLeadingCharacter();
+
+    TrieLeafNavigator produceNaviagor();
 };
+
+
+struct TrieLeafNavigator {
+private:
+    friend class TrieLeaf;
+    unsigned char *currentLoc;
+    TrieLeaf *context;
+
+    TrieLeafNavigator(unsigned char *currentLoc, TrieLeaf *context);
+public:
+
+    unsigned char *getPointer();
+    unsigned int getLength();
+    unsigned long long getValue();
+
+    void next();
+    bool isEnd();
+};
+
 
 } /* namespace Db */
 #endif /* TRIELEAF_H_ */

@@ -19,6 +19,9 @@ int main(int argc, char *argv[])
         if (cmd == "write") {
             cin >> key >> value;
             cout << dbInstance.write(key.c_str(), value) << endl;
+        } else
+        if (cmd == "dump") {
+            dbInstance.dump();
         } else {
             cerr << "Unknown command" << endl;
         }

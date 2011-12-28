@@ -8,6 +8,7 @@
 #include <cstring>
 #include <string>
 #include <iostream>
+#include <queue>
 using namespace std;
 
 #include "Trie.h"
@@ -65,6 +66,11 @@ int Database::write(const char *key, unsigned long long value)
 
     mainIndex->addKey(dbKey, value);
     return 0;
+}
+
+void Database::dump()
+{
+    mainIndex->dump();
 }
 
 } /* namespace Db */
