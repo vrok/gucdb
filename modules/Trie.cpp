@@ -187,6 +187,9 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
                 unsigned char leftmostCharWithCurrentLink = currentNode->checkLeftmostCharWithLink(splitPoint, *splitPointPointer);
                 unsigned char rightmostCharWithCurrentLink = currentNode->checkRightmostCharWithLink(splitPoint, *splitPointPointer);
 
+                /* Current pointer might be overwritten while populating the new leaf below, and we need it a few lines later. */
+                TriePointer currentPointerCopy = *currentPointer;
+
                 if (newLeaf->isEmpty()) {
                     leaves->freeBin(newLeafId);
                     currentNode->setChildrenRange(leftmostCharWithCurrentLink, splitPoint - 1, TriePointer());
@@ -200,7 +203,7 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
                     leaves->freeBin(currentPointer->link);
                     currentNode->setChildrenRange(splitPoint, rightmostCharWithCurrentLink, TriePointer());
                 } else {
-                    currentNode->setChildrenRange(splitPoint, rightmostCharWithCurrentLink, *currentPointer);
+                    currentNode->setChildrenRange(splitPoint, rightmostCharWithCurrentLink, currentPointerCopy);
                 }
             }
         }
