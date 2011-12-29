@@ -179,12 +179,22 @@ unsigned char TrieLeaf::findBestSplitPoint()
     unsigned long currentAccumulatedSizes = 0;
     unsigned long leafWithoutHeaderSize = LEAF_USED_SIZE - sizeof(unsigned long);
 
-    for (unsigned char i = 0; i < sizeof(sizesPerFirstCharacter); i++) {
+    for (int i = 0; i < sizeof(sizesPerFirstCharacter) / sizeof(unsigned long); i++) {
+        /* We loop with int and then cast, to avoid uchar overflow causing infinite loop */
         if ((sizesPerFirstCharacter[i] + currentAccumulatedSizes) >= (leafWithoutHeaderSize / 2)) {
             if (currentAccumulatedSizes > 0) {
-                return i;
+                return (unsigned char) i;
             } else {
-                return i + 1;
+                /* First character with more than zero occurrences happens to overwhelm the leaf node.
+                 * Nested loop below checks if there's any word left starting with a different char,
+                 * depending on that, we return the current index, or the next one.
+                 */
+                for (int j = i + 1; j < sizeof(sizesPerFirstCharacter) / sizeof(unsigned long); j++) {
+                    if (sizesPerFirstCharacter[j] > 0) {
+                        return (unsigned char) (i + 1);
+                    }
+                }
+                return (unsigned char) i;
             }
         }
 

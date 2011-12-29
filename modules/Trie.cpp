@@ -70,7 +70,9 @@ Trie::~Trie() {
 void Trie::initializeEmpty() {
     cout << "Initializing empty trie file" << endl;
 
-    TrieNode *rootNode = nodes->getBin(0);
+    unsigned long long rootNodeId = nodes->getNewBinByID();
+    assert(rootNodeId == 0);
+    TrieNode *rootNode = nodes->getBin(rootNodeId);
 
     unsigned long long leafID = leaves->getNewBinByID();
 
@@ -117,6 +119,18 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
         bool isLinkPure = currentNode->isLinkPure(key.data[currentCharIdx]);
         TriePointer *currentPointer = &currentNode->children[key.data[currentCharIdx]];
 
+        if (currentPointer->isNull()) {
+            unsigned char leftmostCharWithCurrentLink = currentNode->checkLeftmostCharWithLink(key.data[currentCharIdx], *currentPointer);
+            unsigned char rightmostCharWithCurrentLink = currentNode->checkRightmostCharWithLink(key.data[currentCharIdx], *currentPointer);
+
+            unsigned long long newLeafId = leaves->getNewBinByID();
+            TrieLeaf *newLeaf = leaves->getBin(newLeafId);
+
+            currentNode->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink, TriePointer(true, newLeafId));
+
+            newLeaf->add(key, currentCharIdx, value);
+            return;
+        } else
         if (currentPointer->leaf == 0) {
             currentCharIdx++;
             currentNode = nodes->getBin(currentPointer->link);
@@ -152,7 +166,8 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
                 TrieNode *newNode = nodes->getBin(newNodeIndex);
                 currentPointer->leaf = 0;
                 currentPointer->link = newNodeIndex;
-                newNode->setChildrenRange(0, 255, newPointer);
+                newNode->value = newNodeValue;
+                newNode->setChildrenRange(0x00, 0xff, newPointer);
 
                 currentCharIdx++;
                 currentNode = newNode;
@@ -163,28 +178,29 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
                 unsigned char splitPoint = leaf->findBestSplitPoint();
 
                 DatabaseKey dividingKey;
-                dividingKey.data[0] = key.data[splitPoint];
+                dividingKey.data[0] = splitPoint;
                 dividingKey.length = 1;
 
-                leaf->moveAllBelowToAnotherLeaf(key, 0, *newLeaf);
+                leaf->moveAllBelowToAnotherLeaf(dividingKey, 0, *newLeaf);
 
-                unsigned char leftmostCharWithCurrentLink = currentNode->checkLeftmostCharWithLink(splitPoint, *currentPointer);
-                unsigned char rightmostCharWithCurrentLink = currentNode->checkRightmostCharWithLink(splitPoint, *currentPointer);
+                TriePointer *splitPointPointer = &currentNode->children[splitPoint];
+                unsigned char leftmostCharWithCurrentLink = currentNode->checkLeftmostCharWithLink(splitPoint, *splitPointPointer);
+                unsigned char rightmostCharWithCurrentLink = currentNode->checkRightmostCharWithLink(splitPoint, *splitPointPointer);
 
                 if (newLeaf->isEmpty()) {
                     leaves->freeBin(newLeafId);
                     currentNode->setChildrenRange(leftmostCharWithCurrentLink, splitPoint - 1, TriePointer());
                 } else {
-                    currentNode->setChildrenRange(leftmostCharWithCurrentLink, splitPoint - 1, *currentPointer);
+                    currentNode->setChildrenRange(leftmostCharWithCurrentLink, splitPoint - 1, TriePointer(true, newLeafId));
                 }
 
                 if (leaf->isEmpty()) {
-                    leaf->add(key, currentCharIdx, value);
-                    return;
-                    //leaves->freeBin(currentPointer->link);
-                    //currentNode->setChildrenRange(splitPoint, rightmostCharWithCurrentLink, TriePointer());
+                    //leaf->add(key, currentCharIdx, value);
+                    //return;
+                    leaves->freeBin(currentPointer->link);
+                    currentNode->setChildrenRange(splitPoint, rightmostCharWithCurrentLink, TriePointer());
                 } else {
-                    currentNode->setChildrenRange(splitPoint, rightmostCharWithCurrentLink, TriePointer(true, newLeafId));
+                    currentNode->setChildrenRange(splitPoint, rightmostCharWithCurrentLink, *currentPointer);
                 }
             }
         }
@@ -208,7 +224,7 @@ void Trie::dump() {
         nodesQueue.pop();
         TrieNode *currentNode = nodes->getBin(currentId);
 
-        cout << ind << "<node id=\"" << currentId << "\">" << endl;
+        cout << ind << "<node id=\"" << currentId << "\" value=\"" << currentNode->value << "\">" << endl;
 
         TriePointer *prevPointer = NULL;
 
@@ -225,7 +241,8 @@ void Trie::dump() {
                         leavesQueue.push(currentPointer->link);
                         cout << "\" type=\"leaf\" link=\"" << currentPointer->link << "\" />" << endl;
                     } else {
-                        cout << "\" type=\"leaf\" link=\"" << currentPointer->link << "\" />" << endl;
+                        nodesQueue.push(currentPointer->link);
+                        cout << "\" type=\"node\" link=\"" << currentPointer->link << "\" />" << endl;
                     }
                 } else {
                     cout << "\" type=\"NULL\" link=\"NULL\" />" << endl;

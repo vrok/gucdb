@@ -12,7 +12,7 @@
 
 namespace Db {
 
-#define NODE_SIZE 0xff
+#define NODE_SIZE 0xff + 1
 
 struct TrieNode {
     TriePointer children[NODE_SIZE];

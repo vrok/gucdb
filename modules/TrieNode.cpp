@@ -23,14 +23,12 @@ void TrieNode::setChildrenRange(unsigned char firstCharacter,
 
     assert(firstCharacter <= lastCharacter);
 
-    for (unsigned char character = firstCharacter; character < lastCharacter; ++character) {
-        memcpy(&children[character], &childPointer, sizeof(TriePointer));
+    for (int character = firstCharacter; character <= lastCharacter; ++character) {
+        /* We loop with int and then cast to uchar, because if we were setting the range [0, 255],
+         * we would end with an infinite loop.
+         */
+        memcpy(&children[(unsigned char) character], &childPointer, sizeof(TriePointer));
     }
-
-    /* The last character is set outside of the loop, because if we were setting the range [0, 255] and
-     * if we just had replaced "<" with "<=" in the loop, we would end with an infinite loop.
-     */
-    memcpy(&children[lastCharacter], &childPointer, sizeof(TriePointer));
 }
 
 bool TrieNode::isLinkPure(unsigned char character)
