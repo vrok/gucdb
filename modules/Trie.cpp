@@ -197,8 +197,6 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
                 }
 
                 if (leaf->isEmpty()) {
-                    //leaf->add(key, currentCharIdx, value);
-                    //return;
                     leaves->freeBin(currentPointer->link);
                     currentNode->setChildrenRange(splitPoint, rightmostCharWithCurrentLink, TriePointer());
                 } else {

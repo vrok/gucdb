@@ -241,20 +241,6 @@ unsigned long long TrieLeaf::stripLeadingCharacter()
     return result;
 }
 
-void TrieLeaf::divideIntoTwoBasedOnFirstChar(unsigned char comparator, TrieLeaf &anotherLeaf)
-{
-#if 0
-    unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
-    unsigned long shift = 0;
-
-    while (currentLoc < (data + LEAF_USED_SIZE)) {
-        unsigned long currentSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(unsigned long long);
-
-        if ((DATA_LOCATION_TO_UL(currentLoc) == 0
-    }
-#endif
-}
-
 TrieLeafNavigator TrieLeaf::produceNaviagor()
 {
     return TrieLeafNavigator(DATA_AFTER_LEAF_USED_SIZE, this);
