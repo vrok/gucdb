@@ -36,7 +36,7 @@ public:
     void moveAllBelowToAnotherLeaf(const DatabaseKey &key, int firstCharacterIdx, TrieLeaf &anotherLeaf);
     void moveAllEqualOrBiggerToAnotherLeaf(unsigned char initialCharacter);
     void divideIntoTwoBasedOnFirstChar(unsigned char comparator, TrieLeaf &anotherLeaf);
-    unsigned char findBestSplitPoint();
+    unsigned char findBestSplitPoint(unsigned char leftmostPoint, unsigned char rightmostPoint);
     unsigned long long stripLeadingCharacter();
 
     TrieLeafNavigator produceNaviagor();

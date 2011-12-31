@@ -278,7 +278,7 @@ TEST_F(TrieLeafTest, TestFindBestSplit)
         leaf.add(key, 0, i);
     }
 
-    ASSERT_EQ('5', leaf.findBestSplitPoint());
+    ASSERT_EQ('5', leaf.findBestSplitPoint(0, 0xff));
 }
 
 TEST_F(TrieLeafTest, TestFindBestSplitFirstOccurenceOverwhelming)
@@ -305,7 +305,7 @@ TEST_F(TrieLeafTest, TestFindBestSplitFirstOccurenceOverwhelming)
 
     leaf.add(key, 0, 1234);
 
-    ASSERT_EQ('c', leaf.findBestSplitPoint());
+    ASSERT_EQ('c', leaf.findBestSplitPoint(0, 0xff));
 }
 
 TEST_F(TrieLeafTest, TestFindBestSplitLastOccurenceOverwhelming)
@@ -327,10 +327,10 @@ TEST_F(TrieLeafTest, TestFindBestSplitLastOccurenceOverwhelming)
 
     leaf.add(key, 0, 1234);
 
-    ASSERT_EQ('t', leaf.findBestSplitPoint());
+    ASSERT_EQ('t', leaf.findBestSplitPoint(0, 0xff));
 }
 
-TEST_F(TrieLeafTest, TestFindBestSplitOnlyOneInitialChar)
+TEST_F(TrieLeafTest, TestFindBestSplitOnlyOneInitialCharAndLeftBoundaryActivates)
 {
     string key_data("test");
     Db::DatabaseKey key;
@@ -342,7 +342,7 @@ TEST_F(TrieLeafTest, TestFindBestSplitOnlyOneInitialChar)
         leaf.add(key, 0, i);
     }
 
-    ASSERT_EQ('t', leaf.findBestSplitPoint());
+    ASSERT_EQ('t', leaf.findBestSplitPoint(0, 't'));
 }
 
 TEST_F(TrieLeafTest, TestIsEmpty)

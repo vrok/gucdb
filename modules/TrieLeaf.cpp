@@ -160,7 +160,7 @@ void TrieLeaf::moveAllEqualOrBiggerToAnotherLeaf(unsigned char initialCharacter)
 {
 }
 
-unsigned char TrieLeaf::findBestSplitPoint()
+unsigned char TrieLeaf::findBestSplitPoint(unsigned char leftmostPoint, unsigned char rightmostPoint)
 {
     unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
     unsigned long sizesPerFirstCharacter[256];
@@ -179,30 +179,33 @@ unsigned char TrieLeaf::findBestSplitPoint()
     unsigned long currentAccumulatedSizes = 0;
     unsigned long leafWithoutHeaderSize = LEAF_USED_SIZE - sizeof(unsigned long);
 
-    for (int i = 0; i < sizeof(sizesPerFirstCharacter) / sizeof(unsigned long); i++) {
+    int potentialSplitPoint;
+
+
+    for (potentialSplitPoint = leftmostPoint; potentialSplitPoint <= rightmostPoint; potentialSplitPoint++) {
         /* We loop with int and then cast, to avoid uchar overflow causing infinite loop */
-        if ((sizesPerFirstCharacter[i] + currentAccumulatedSizes) >= (leafWithoutHeaderSize / 2)) {
+        if ((sizesPerFirstCharacter[potentialSplitPoint] + currentAccumulatedSizes) >= (leafWithoutHeaderSize / 2)) {
             if (currentAccumulatedSizes > 0) {
-                return (unsigned char) i;
+                //return (unsigned char) i;
+                break;
             } else {
                 /* First character with more than zero occurrences happens to overwhelm the leaf node.
-                 * Nested loop below checks if there's any word left starting with a different char,
-                 * depending on that, we return the current index, or the next one.
                  */
-                for (int j = i + 1; j < sizeof(sizesPerFirstCharacter) / sizeof(unsigned long); j++) {
-                    if (sizesPerFirstCharacter[j] > 0) {
-                        return (unsigned char) (i + 1);
-                    }
-                }
-                return (unsigned char) i;
+                potentialSplitPoint++;
+                break;
             }
         }
 
-        currentAccumulatedSizes += sizesPerFirstCharacter[i];
+        currentAccumulatedSizes += sizesPerFirstCharacter[potentialSplitPoint];
     }
 
-    /* It should never end up here. */
-    return sizeof(unsigned int) - 1;
+    if (potentialSplitPoint > rightmostPoint)
+        return rightmostPoint;
+
+    if (potentialSplitPoint == leftmostPoint)
+        return leftmostPoint + 1;
+
+    return potentialSplitPoint;
 }
 
 unsigned long long TrieLeaf::stripLeadingCharacter()

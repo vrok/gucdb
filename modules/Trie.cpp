@@ -175,17 +175,16 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
                 unsigned long long newLeafId = leaves->getNewBinByID();
                 TrieLeaf *newLeaf = leaves->getBin(newLeafId);
 
-                unsigned char splitPoint = leaf->findBestSplitPoint();
+                unsigned char leftmostCharWithCurrentLink = currentNode->checkLeftmostCharWithLink(key.data[currentCharIdx], *currentPointer);
+                unsigned char rightmostCharWithCurrentLink = currentNode->checkRightmostCharWithLink(key.data[currentCharIdx], *currentPointer);
+
+                unsigned char splitPoint = leaf->findBestSplitPoint(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink);
 
                 DatabaseKey dividingKey;
                 dividingKey.data[0] = splitPoint;
                 dividingKey.length = 1;
 
                 leaf->moveAllBelowToAnotherLeaf(dividingKey, 0, *newLeaf);
-
-                TriePointer *splitPointPointer = &currentNode->children[splitPoint];
-                unsigned char leftmostCharWithCurrentLink = currentNode->checkLeftmostCharWithLink(splitPoint, *splitPointPointer);
-                unsigned char rightmostCharWithCurrentLink = currentNode->checkRightmostCharWithLink(splitPoint, *splitPointPointer);
 
                 /* Current pointer might be overwritten while populating the new leaf below, and we need it a few lines later. */
                 TriePointer currentPointerCopy = *currentPointer;
