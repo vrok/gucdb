@@ -34,7 +34,6 @@ public:
     void add(const DatabaseKey &key, int firstCharacterIdx, unsigned long long value);
     void remove(const DatabaseKey &key, int firstCharacterIdx);
     void moveAllBelowToAnotherLeaf(const DatabaseKey &key, int firstCharacterIdx, TrieLeaf &anotherLeaf);
-    void moveAllEqualOrBiggerToAnotherLeaf(unsigned char initialCharacter);
     unsigned char findBestSplitPoint(unsigned char leftmostPoint, unsigned char rightmostPoint);
     unsigned long long stripLeadingCharacter();
 

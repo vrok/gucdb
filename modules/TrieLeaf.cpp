@@ -156,10 +156,6 @@ void TrieLeaf::moveAllBelowToAnotherLeaf(const DatabaseKey &key, int firstCharac
     DATA_LOCATION_TO_UL(data) -= shift;
 }
 
-void TrieLeaf::moveAllEqualOrBiggerToAnotherLeaf(unsigned char initialCharacter)
-{
-}
-
 unsigned char TrieLeaf::findBestSplitPoint(unsigned char leftmostPoint, unsigned char rightmostPoint)
 {
     unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
