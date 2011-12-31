@@ -28,7 +28,9 @@ public:
 
     OpeningResult openMMapedFile(const std::string &filename, unsigned long minimalInitialSize);
 
-    void extendFileToSize(off_t newSize);
+    void extendFileToSize(size_t newSize);
+
+    void extendFileAndMmapingToSize(size_t newSize);
 
     std::string mmapErrnoToStr(int errnoNum);
 

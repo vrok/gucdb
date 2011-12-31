@@ -14,10 +14,13 @@ using namespace std;
 
 #include "BinFileMap.h"
 
+#define BIN_FILE_MAP_EXPAND_SIZE 1
+
 namespace Db {
 
 BinFileMap::BinFileMap(const std::string &filename) {
-    openMMapedFile(filename, SystemParams::initialIndexMapSize());
+    //openMMapedFile(filename, SystemParams::initialIndexMapSize());
+    openMMapedFile(filename, BIN_FILE_MAP_EXPAND_SIZE);
     cout << "Opened index map, loading" << endl;
     loadMapCache();
 }
@@ -46,7 +49,16 @@ void BinFileMap::loadMapCache() {
 unsigned long BinFileMap::fetchEmptyBin() {
 
     if (emptyBins.empty()) {
-        return -1;
+        cout << "fetchEmptyBin: out of bins, expanding" << endl;
+
+        size_t currentMmapedSize = mmaped_size;
+        //size_t newMmapedSize = mmaped_size + SystemParams::initialIndexMapSize();
+        size_t newMmapedSize = mmaped_size + BIN_FILE_MAP_EXPAND_SIZE;
+        extendFileAndMmapingToSize(newMmapedSize);
+
+        for (int i = currentMmapedSize * 8; i < newMmapedSize * 8; i++) {
+            emptyBins.push(i);
+        }
     }
 
     unsigned long result = emptyBins.front();

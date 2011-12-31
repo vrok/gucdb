@@ -19,6 +19,7 @@ using namespace std;
 #include <sys/mman.h>
 #include <errno.h>
 
+
 // TODO: CDT goes crazy without it, possibly remove it in future
 #ifndef size_t
 //#define size_t long unsigned int
@@ -26,7 +27,7 @@ using namespace std;
 
 namespace Db {
 
-void MMapedFile::extendFileToSize(off_t newSize) {
+void MMapedFile::extendFileToSize(size_t newSize) {
     int result = lseek(fd, newSize - 1, SEEK_SET);
     if (result == -1) {
         cerr << "lseek error" << endl;
@@ -35,6 +36,22 @@ void MMapedFile::extendFileToSize(off_t newSize) {
     if (result != 1) {
         cerr << "initial write error" << endl;
     }
+
+}
+
+void MMapedFile::extendFileAndMmapingToSize(size_t newSize) {
+    extendFileToSize(newSize);
+
+    void *newFileStart = mremap(fileStart, mmaped_size, newSize, MREMAP_MAYMOVE);
+    if (newFileStart == MAP_FAILED) {
+        int errorNum = errno;
+        string errorDesc = mmapErrnoToStr(errorNum);
+        cerr << "mremap failed with " << errorDesc << endl;
+        return;
+    }
+
+    fileStart = newFileStart;
+    mmaped_size = newSize;
 }
 
 MMapedFile::OpeningResult MMapedFile::openMMapedFile(const std::string &filename, unsigned long minimalInitialSize) {
