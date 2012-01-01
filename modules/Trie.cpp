@@ -171,6 +171,13 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
 
                 currentCharIdx++;
                 currentNode = newNode;
+
+                if (currentCharIdx == key.length) {
+                    /* It might happen that the word ends exactly at the fresh node.
+                     */
+                    currentNode->value = value;
+                    return;
+                }
             } else {
                 unsigned long long newLeafId = leaves->getNewBinByID();
                 TrieLeaf *newLeaf = leaves->getBin(newLeafId);
@@ -197,7 +204,7 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
                 }
 
                 if (leaf->isEmpty()) {
-                    leaves->freeBin(currentPointer->link);
+                    leaves->freeBin(currentPointerCopy.link);
                     currentNode->setChildrenRange(splitPoint, rightmostCharWithCurrentLink, TriePointer());
                 } else {
                     currentNode->setChildrenRange(splitPoint, rightmostCharWithCurrentLink, currentPointerCopy);
