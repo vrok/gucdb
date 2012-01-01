@@ -38,10 +38,12 @@ MMapedFile::OpeningResult BinFile<BinType>::openMMapedFile() {
 
 template<typename BinType>
 void BinFile<BinType>::assureBinIsMmaped(unsigned long id) {
-    if ((id / 8) * sizeof(BinType) >= mmaped_size) {
+
+    BinType *binAddress = getBin(id);
+    if ((binAddress + sizeof(BinType)) > ((BinType*) fileStart + mmaped_size)) {
         cerr << "assureBinIsMmaped: bin " << id << " is unmapped" << endl;
         extendFileAndMmapingToSize(mmaped_size + initialFileSize);
-        assert((id / 8) * sizeof(BinType) < mmaped_size);
+        assert((binAddress + sizeof(BinType)) <= ((BinType*) fileStart + mmaped_size));
     }
 }
 
@@ -56,8 +58,11 @@ BinType *BinFile<BinType>::getBin(unsigned long int id) {
 
 template<typename BinType>
 unsigned long long BinFile<BinType>::getNewBinByID() {
+    cout << " 1 " << endl;
     unsigned long newBinId = trieMap->fetchEmptyBin();
+    cout << " 2 " << endl;
     assureBinIsMmaped(newBinId);
+    cout << " 3 " << newBinId << " " << getBin(newBinId) << " " << ((BinType*) fileStart + mmaped_size) << endl;
     return newBinId;
 }
 
