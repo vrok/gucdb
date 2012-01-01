@@ -38,10 +38,10 @@ MMapedFile::OpeningResult BinFile<BinType>::openMMapedFile() {
 
 template<typename BinType>
 void BinFile<BinType>::assureBinIsMmaped(unsigned long id) {
-    if (id / 8 >= mmaped_size) {
-        cout << "assureBinIsMmaped: bin " << id << " is unmapped" << endl;
+    if ((id / 8) * sizeof(BinType) >= mmaped_size) {
+        cerr << "assureBinIsMmaped: bin " << id << " is unmapped" << endl;
         extendFileAndMmapingToSize(mmaped_size + initialFileSize);
-        assert(id / 8 < mmaped_size);
+        assert((id / 8) * sizeof(BinType) < mmaped_size);
     }
 }
 

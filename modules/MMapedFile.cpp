@@ -94,7 +94,7 @@ MMapedFile::OpeningResult MMapedFile::openMMapedFile(const std::string &filename
     }
 
     if (fillWithZerosAfterMmap) {
-        cout << "Initial open, filling with zeros" << endl;
+        //cout << "Initial open, filling with zeros" << endl;
         char *fileEnd = ((char*)fileStart) + mmaped_size;
         for (char *loc = (char*)(fileStart); loc < fileEnd; loc++) {
             *loc = 0;

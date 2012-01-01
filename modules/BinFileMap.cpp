@@ -21,7 +21,7 @@ namespace Db {
 BinFileMap::BinFileMap(const std::string &filename) {
     //openMMapedFile(filename, SystemParams::initialIndexMapSize());
     openMMapedFile(filename, BIN_FILE_MAP_EXPAND_SIZE);
-    cout << "Opened index map, loading" << endl;
+    cerr << "Opened index map, loading" << endl;
     loadMapCache();
 }
 
@@ -48,7 +48,7 @@ void BinFileMap::loadMapCache() {
 unsigned long BinFileMap::fetchEmptyBin() {
 
     if (emptyBins.empty()) {
-        cout << "fetchEmptyBin: out of bins, expanding" << endl;
+        cerr << "fetchEmptyBin: out of bins, expanding" << endl;
 
         size_t currentMmapedSize = mmaped_size;
         //size_t newMmapedSize = mmaped_size + SystemParams::initialIndexMapSize();

@@ -19,8 +19,6 @@ struct TrieNode {
 
     unsigned long long values[NODE_SIZE];
 
-    unsigned long long value;
-
     void setChild(unsigned char character, const TriePointer &childPointer);
 
     void setChildrenRange(unsigned char firstCharacter, unsigned char lastCharacter, const TriePointer &childPointer);

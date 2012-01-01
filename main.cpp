@@ -11,6 +11,8 @@ int main(int argc, char *argv[])
     unsigned long long value;
     Db::Database dbInstance("/tmp/");
     while (1) {
+        //cout << "> ";
+        cout.flush();
         cin >> cmd;
         if (cmd == "read") {
             cin >> key;
@@ -22,6 +24,9 @@ int main(int argc, char *argv[])
         } else
         if (cmd == "dump") {
             dbInstance.dump();
+        } else
+        if (cmd == "exit") {
+            return 0;
         } else {
             cerr << "Unknown command" << endl;
         }

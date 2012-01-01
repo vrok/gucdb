@@ -3,8 +3,8 @@
 import random
 import sys
 
-MAX_LEN = 3
-TEST_LEN = 20
+MAX_LEN = 9
+TEST_LEN = 1000
 
 db = {}
 
@@ -34,6 +34,7 @@ for i in xrange(TEST_LEN):
         input_lines.append('read %s' % key)
         output_lines.append(str(db[key]))
 
+input_lines.append('exit')
 
 if len(sys.argv) > 1:
     if len(sys.argv) != 3:

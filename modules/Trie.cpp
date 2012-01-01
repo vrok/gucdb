@@ -43,8 +43,7 @@ Trie::Trie(BinFile<TrieNode> *nodes, BinFile<TrieLeaf> *leaves)
         break;
     }
 
-    cout << "Index leaves file opened" << endl;
-
+    //cout << "Index leaves file opened" << endl;
 
     switch (nodes->openMMapedFile()) {
     case MMapedFile::OPENED:
@@ -58,7 +57,7 @@ Trie::Trie(BinFile<TrieNode> *nodes, BinFile<TrieLeaf> *leaves)
         break;
     }
 
-    cout << "Index file opened" << endl;
+    //cout << "Index file opened" << endl;
 
 }
 
@@ -68,7 +67,7 @@ Trie::~Trie() {
 }
 
 void Trie::initializeEmpty() {
-    cout << "Initializing empty trie file" << endl;
+    //cout << "Initializing empty trie file" << endl;
 
     unsigned long long rootNodeId = nodes->getNewBinByID();
     assert(rootNodeId == 0);
@@ -232,7 +231,7 @@ void Trie::dump() {
         nodesQueue.pop();
         TrieNode *currentNode = nodes->getBin(currentId);
 
-        cout << ind << "<node id=\"" << currentId << "\" value=\"" << currentNode->value << "\">" << endl;
+        cout << ind << "<node id=\"" << currentId << "\">" << endl;
 
         for (int currentChar = 0x00; currentChar <= 0xff; currentChar++) {
             if (currentNode->values[currentChar] != 0) {

@@ -28,7 +28,7 @@ Database::Database(const string & dbDirectory)
                                                BinFile<TrieNode>::minimalIndexExpandSize() * 32),
                          new BinFile<TrieLeaf>(dbDirectory + "/main.leaves",
                                                new BinFileMap(dbDirectory + "/main.leaves.map"),
-                                               BinFile<TrieLeaf>::minimalIndexExpandSize() * 8));
+                                               BinFile<TrieLeaf>::minimalIndexExpandSize() * 1));
 #if 0
 	TrieNode *newNode = mainIndex->getNewBin();
 	cout << "New node: " << newNode << endl;
