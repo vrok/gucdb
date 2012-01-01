@@ -14,7 +14,7 @@ using namespace std;
 
 #include "BinFileMap.h"
 
-#define BIN_FILE_MAP_EXPAND_SIZE 1
+#define BIN_FILE_MAP_EXPAND_SIZE 12
 
 namespace Db {
 

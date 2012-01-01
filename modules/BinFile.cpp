@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <string>
+#include <cstring>
 using namespace std;
 
 #include "SystemParams.h"
@@ -37,14 +38,18 @@ MMapedFile::OpeningResult BinFile<BinType>::openMMapedFile() {
 }
 
 template<typename BinType>
-void BinFile<BinType>::assureBinIsMmaped(unsigned long id) {
-
+void BinFile<BinType>::assureNewBinIsUsable(unsigned long id) {
     BinType *binAddress = getBin(id);
+
+    /* Firstly, we check if the bin is within the mmaped space, if not, we remap. */
     if ((binAddress + sizeof(BinType)) > ((BinType*) fileStart + mmaped_size)) {
         cerr << "assureBinIsMmaped: bin " << id << " is unmapped" << endl;
         extendFileAndMmapingToSize(mmaped_size + initialFileSize);
         assert((binAddress + sizeof(BinType)) <= ((BinType*) fileStart + mmaped_size));
     }
+
+    /* This function is used only for new bins, so we clean any potential garbage. */
+    memset(binAddress, 0, sizeof(BinType));
 }
 
 template<typename BinType>
@@ -61,7 +66,7 @@ unsigned long long BinFile<BinType>::getNewBinByID() {
     cout << " 1 " << endl;
     unsigned long newBinId = trieMap->fetchEmptyBin();
     cout << " 2 " << endl;
-    assureBinIsMmaped(newBinId);
+    assureNewBinIsUsable(newBinId);
     cout << " 3 " << newBinId << " " << getBin(newBinId) << " " << ((BinType*) fileStart + mmaped_size) << endl;
     return newBinId;
 }

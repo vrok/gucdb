@@ -19,7 +19,7 @@ namespace Db {
 template <typename BinType>
 class BinFile : public MMapedFile {
 private:
-    void assureBinIsMmaped(unsigned long id);
+    void assureNewBinIsUsable(unsigned long id);
 
 public: /* TODO: change to protected */
     unsigned long initialFileSize;
