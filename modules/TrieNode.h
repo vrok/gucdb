@@ -17,6 +17,8 @@ namespace Db {
 struct TrieNode {
     TriePointer children[NODE_SIZE];
 
+    unsigned long long values[NODE_SIZE];
+
     unsigned long long value;
 
     void setChild(unsigned char character, const TriePointer &childPointer);

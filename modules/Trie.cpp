@@ -97,7 +97,7 @@ unsigned long long Trie::get(const DatabaseKey &key) {
             currentNode = nodes->getBin(currentPointer->link);
 
             if (currentCharIdx == key.length) {
-                return currentNode->value;
+                return currentNode->values[key.data[currentCharIdx - 1]];
             }
         } else {
             TrieLeaf *leaf = leaves->getBin(currentPointer->link);
@@ -141,7 +141,7 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
                  * node yet. We'll set the value pointer in the non-leaf node.
                  */
 
-                currentNode->value = value;
+                currentNode->values[key.data[currentCharIdx - 1]] = value;
                 return;
             }
         } else {
@@ -166,16 +166,17 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
                 TrieNode *newNode = nodes->getBin(newNodeIndex);
                 currentPointer->leaf = 0;
                 currentPointer->link = newNodeIndex;
-                newNode->value = newNodeValue;
+                newNode->values[key.data[currentCharIdx]] = newNodeValue;
                 newNode->setChildrenRange(0x00, 0xff, newPointer);
 
                 currentCharIdx++;
                 currentNode = newNode;
 
                 if (currentCharIdx == key.length) {
-                    /* It might happen that the word ends exactly at the fresh node.
+                    /* It might happen that the word ends exactly at the fresh node
+                     * TODO: we overwrite value
                      */
-                    currentNode->value = value;
+                    currentNode->values[key.data[currentCharIdx - 1]] = value;
                     return;
                 }
             } else {
@@ -232,6 +233,13 @@ void Trie::dump() {
         TrieNode *currentNode = nodes->getBin(currentId);
 
         cout << ind << "<node id=\"" << currentId << "\" value=\"" << currentNode->value << "\">" << endl;
+
+        for (int currentChar = 0x00; currentChar <= 0xff; currentChar++) {
+            if (currentNode->values[currentChar] != 0) {
+                cout << ind << ind << "<key char=\"" << currentChar
+                     << "\" value=\"" << currentNode->values[currentChar] << "\" />" << endl;
+            }
+        }
 
         TriePointer *prevPointer = NULL;
 
