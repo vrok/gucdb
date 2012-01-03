@@ -8,15 +8,17 @@
 #ifndef MMAPEDFILE_H_
 #define MMAPEDFILE_H_
 
+#include <cstddef>
 #include <string>
+#include <map>
 
 namespace Db {
 
 class MMapedFile {
 protected:
     int fd;
-    unsigned long long int mmaped_size;
-    void *fileStart;
+    size_t mmaped_size;
+    std::map<off_t, char*> fileMmaps;
 
 public:
 
@@ -26,11 +28,13 @@ public:
         OPENED,
     };
 
-    OpeningResult openMMapedFile(const std::string &filename, unsigned long minimalInitialSize);
+    OpeningResult openMMapedFile(const std::string &filename, size_t minimalInitialSize);
+
+    char* getOffsetLoc(off_t offset);
 
     void extendFileToSize(size_t newSize);
 
-    void extendFileAndMmapingToSize(size_t newSize);
+    bool extendFileAndMmapingToSize(size_t newSize);
 
     std::string mmapErrnoToStr(int errnoNum);
 

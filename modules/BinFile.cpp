@@ -38,36 +38,39 @@ MMapedFile::OpeningResult BinFile<BinType>::openMMapedFile() {
 }
 
 template<typename BinType>
-void BinFile<BinType>::assureNewBinIsUsable(unsigned long id) {
-    BinType *binAddress = getBin(id);
-
-    /* Firstly, we check if the bin is within the mmaped space, if not, we remap. */
-    if ((binAddress + sizeof(BinType)) > ((BinType*) fileStart + mmaped_size)) {
-        cerr << "assureBinIsMmaped: bin " << id << " is unmapped" << endl;
+void BinFile<BinType>::assureNewBinIsUsable(off_t binOffset) {
+    if (binOffset >= mmaped_size) {
         extendFileAndMmapingToSize(mmaped_size + initialFileSize);
-        assert((binAddress + sizeof(BinType)) <= ((BinType*) fileStart + mmaped_size));
+        assert(binOffset < mmaped_size);
     }
-
-    /* This function is used only for new bins, so we clean any potential garbage. */
-    memset(binAddress, 0, sizeof(BinType));
 }
 
-template<typename BinType>
-BinType *BinFile<BinType>::getBin(unsigned long int id) {
+template <typename BinType>
+off_t BinFile<BinType>::getBinOffset(unsigned long id) {
     unsigned long binsPerExpandSize = minimalIndexExpandSize() / sizeof(BinType);
 
     unsigned long expandSizeLocation = minimalIndexExpandSize() * (id / binsPerExpandSize);
 
-    return (BinType*) (((unsigned char*) fileStart) + expandSizeLocation + (id % binsPerExpandSize) * sizeof(BinType));
+    return expandSizeLocation + (id % binsPerExpandSize) * sizeof(BinType);
+}
+
+template<typename BinType>
+BinType *BinFile<BinType>::getBin(unsigned long id) {
+    off_t binOffset = getBinOffset(id);
+    return (BinType*) getOffsetLoc(binOffset);
 }
 
 template<typename BinType>
 unsigned long long BinFile<BinType>::getNewBinByID() {
-    cout << " 1 " << endl;
     unsigned long newBinId = trieMap->fetchEmptyBin();
-    cout << " 2 " << endl;
-    assureNewBinIsUsable(newBinId);
-    cout << " 3 " << newBinId << " " << getBin(newBinId) << " " << ((BinType*) fileStart + mmaped_size) << endl;
+
+    off_t binOffset = getBinOffset(newBinId);
+    assureNewBinIsUsable(binOffset);
+
+    BinType *bin = (BinType*) getOffsetLoc(binOffset);
+
+    memset(bin, 0, sizeof(BinType));
+
     return newBinId;
 }
 

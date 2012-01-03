@@ -30,12 +30,8 @@ BinFileMap::~BinFileMap() {
 }
 
 void BinFileMap::loadMapCache() {
-    unsigned char *fileEnd = ((unsigned char*)fileStart) + mmaped_size;
-    unsigned char *loc = (unsigned char*)fileStart;
-    for (unsigned int i = 0;
-         loc < fileEnd;
-         loc++, i++)
-    {
+    for (off_t i = 0; i < mmaped_size; i++) {
+        unsigned char *loc = (unsigned char*) getOffsetLoc(i);
         for (int j = 0; j < 8; j++) {
             if ((*loc & (1 << j)) == 0) {
                 /* We've got an empty bin for trie node */
@@ -62,12 +58,12 @@ unsigned long BinFileMap::fetchEmptyBin() {
 
     unsigned long result = emptyBins.front();
     emptyBins.pop();
-    *(((unsigned char*)fileStart) + (result / 8)) |= (1 << (result % 8));
+    *getOffsetLoc(result / 8) |= (1 << (result % 8));
     return result;
 }
 
 void BinFileMap::makeBinEmpty(unsigned long index) {
-    *(((unsigned char*)fileStart) + (index / 8)) &= ~(1 << (index % 8));
+    *getOffsetLoc(index / 8) &= ~(1 << (index % 8));
     emptyBins.push(index);
 }
 

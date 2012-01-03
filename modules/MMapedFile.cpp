@@ -9,6 +9,8 @@
 
 #include "MMapedFile.h"
 
+#include <map>
+#include <algorithm>
 #include <iostream>
 using namespace std;
 
@@ -39,22 +41,35 @@ void MMapedFile::extendFileToSize(size_t newSize) {
 
 }
 
-void MMapedFile::extendFileAndMmapingToSize(size_t newSize) {
+bool MMapedFile::extendFileAndMmapingToSize(size_t newSize) {
     extendFileToSize(newSize);
 
-    void *newFileStart = mremap(fileStart, mmaped_size, newSize, MREMAP_MAYMOVE);
-    if (newFileStart == MAP_FAILED) {
+    size_t newMmapingSize = newSize - mmaped_size;
+
+    void *mmapStart = mmap(0, newMmapingSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (mmapStart == MAP_FAILED) {
         int errorNum = errno;
         string errorDesc = mmapErrnoToStr(errorNum);
-        cerr << "mremap failed with " << errorDesc << endl;
-        return;
+        cerr << ": mmap failed with " << errorDesc << endl;
+        return false;
     }
 
-    fileStart = newFileStart;
+    fileMmaps[mmaped_size] = (char*) mmapStart;
     mmaped_size = newSize;
+
+    //cout << "RE MMAPED FILE " << this << " : " << newSize << " " << mmapStart << endl;
 }
 
-MMapedFile::OpeningResult MMapedFile::openMMapedFile(const std::string &filename, unsigned long minimalInitialSize) {
+char* MMapedFile::getOffsetLoc(off_t offset) {
+    map<off_t, char*>::iterator desiredMmaping = --fileMmaps.upper_bound(offset);
+
+    /* Calculate offset within the found mmaping. */
+    off_t singleMmapingOffset = offset - desiredMmaping->first;
+
+    return desiredMmaping->second + singleMmapingOffset;
+}
+
+MMapedFile::OpeningResult MMapedFile::openMMapedFile(const std::string &filename, size_t minimalInitialSize) {
     struct stat sb;
     off_t len;
     char *p;
@@ -76,32 +91,10 @@ MMapedFile::OpeningResult MMapedFile::openMMapedFile(const std::string &filename
         return ERROR;
     }
 
+    mmaped_size = 0;
     mmaped_size = sb.st_size;
 
-    if (sb.st_size < minimalInitialSize) {
-        extendFileToSize(minimalInitialSize);
-
-        mmaped_size = minimalInitialSize;
-        fillWithZerosAfterMmap = true;
-    }
-
-    fileStart = mmap(0, mmaped_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (fileStart == MAP_FAILED) {
-        int errorNum = errno;
-        string errorDesc = mmapErrnoToStr(errorNum);
-        cerr << filename << ": mmap failed with " << errorDesc << endl;
-        return ERROR;
-    }
-
-    if (fillWithZerosAfterMmap) {
-        //cout << "Initial open, filling with zeros" << endl;
-        char *fileEnd = ((char*)fileStart) + mmaped_size;
-        for (char *loc = (char*)(fileStart); loc < fileEnd; loc++) {
-            *loc = 0;
-        }
-
-        return NEW_FILE;
-    }
+    extendFileAndMmapingToSize(max(minimalInitialSize, (size_t) sb.st_size));
 
     return OPENED;
 }
@@ -122,10 +115,13 @@ string MMapedFile::mmapErrnoToStr(int errnoNum) {
 }
 
 void MMapedFile::closeMMapedFile() {
+
+    //cout << "CCCCCCC close" << endl;
+#if 0
     if (munmap(fileStart, mmaped_size) == -1) {
         cerr << "Error un-mapping trie file" << endl;
     }
-
+#endif
     close(fd);
 }
 
