@@ -14,6 +14,8 @@
 #include <iostream>
 using namespace std;
 
+#include <cassert>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -46,7 +48,10 @@ bool MMapedFile::extendFileAndMmapingToSize(size_t newSize) {
 
     size_t newMmapingSize = newSize - mmaped_size;
 
-    void *mmapStart = mmap(0, newMmapingSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    cerr << "NEW MMAPING " << newMmapingSize << " " << newSize << endl;
+    assert((newMmapingSize % SystemParams::pageSize()) == 0);
+
+    void *mmapStart = mmap(0, newMmapingSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, (off_t) mmaped_size);
     if (mmapStart == MAP_FAILED) {
         int errorNum = errno;
         string errorDesc = mmapErrnoToStr(errorNum);
@@ -95,6 +100,10 @@ MMapedFile::OpeningResult MMapedFile::openMMapedFile(const std::string &filename
     mmaped_size = sb.st_size;
 
     extendFileAndMmapingToSize(max(minimalInitialSize, (size_t) sb.st_size));
+
+    if (sb.st_size < minimalInitialSize) {
+        return NEW_FILE;
+    }
 
     return OPENED;
 }

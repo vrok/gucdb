@@ -14,7 +14,7 @@ using namespace std;
 
 #include "BinFileMap.h"
 
-#define BIN_FILE_MAP_EXPAND_SIZE 12
+#define BIN_FILE_MAP_EXPAND_SIZE SystemParams::pageSize()
 
 namespace Db {
 
@@ -53,12 +53,16 @@ unsigned long BinFileMap::fetchEmptyBin() {
 
         for (int i = currentMmapedSize * 8; i < newMmapedSize * 8; i++) {
             emptyBins.push(i);
+            cerr << "pusing " << i << endl;
         }
     }
 
     unsigned long result = emptyBins.front();
     emptyBins.pop();
     *getOffsetLoc(result / 8) |= (1 << (result % 8));
+
+    cerr << this << ": new empty bin " << result << endl;
+
     return result;
 }
 

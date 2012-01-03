@@ -39,9 +39,10 @@ MMapedFile::OpeningResult BinFile<BinType>::openMMapedFile() {
 
 template<typename BinType>
 void BinFile<BinType>::assureNewBinIsUsable(off_t binOffset) {
-    if (binOffset >= mmaped_size) {
+    if ((binOffset + sizeof(BinType)) >= mmaped_size) {
+        cerr << this << ": Bin not in range, expanding " << binOffset << endl;
         extendFileAndMmapingToSize(mmaped_size + initialFileSize);
-        assert(binOffset < mmaped_size);
+        assert((binOffset + sizeof(BinType)) < mmaped_size);
     }
 }
 

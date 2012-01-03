@@ -4,7 +4,7 @@ import random
 import sys
 
 MAX_LEN = 9
-TEST_LEN = 40
+TEST_LEN = 1000
 
 db = {}
 
