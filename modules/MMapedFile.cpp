@@ -97,7 +97,6 @@ MMapedFile::OpeningResult MMapedFile::openMMapedFile(const std::string &filename
     }
 
     mmaped_size = 0;
-    mmaped_size = sb.st_size;
 
     extendFileAndMmapingToSize(max(minimalInitialSize, (size_t) sb.st_size));
 
