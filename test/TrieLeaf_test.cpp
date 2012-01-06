@@ -92,6 +92,22 @@ TEST_F(TrieLeafTest, TestSomeGetsAndSets)
     ASSERT_EQ(5000, leaf.get(key2, 0));
 }
 
+TEST_F(TrieLeafTest, TestUpdate)
+{
+    Db::DatabaseKey key;
+    string key_data = "test123";
+    memcpy((void*) key.data, (void*) key_data.c_str(), key_data.length());
+    key.length = key_data.length();
+
+    leaf.add(key, 0, 3000);
+
+    ASSERT_EQ(3000, leaf.get(key, 0));
+
+    leaf.update(key, 0, 4000);
+
+    ASSERT_EQ(4000, leaf.get(key, 0));
+}
+
 TEST_F(TrieLeafTest, TestRemove)
 {
     Db::DatabaseKey key;

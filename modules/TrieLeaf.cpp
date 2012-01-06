@@ -107,6 +107,17 @@ void TrieLeaf<ValueType>::add(const DatabaseKey &key, int firstCharacterIdx, Val
 }
 
 template <typename ValueType>
+void TrieLeaf<ValueType>::update(const DatabaseKey &key, int firstCharacterIdx, ValueType value)
+{
+    unsigned char *searchResult = find(key, firstCharacterIdx);
+    if (searchResult == NULL) {
+        return;
+    }
+
+    DATA_LOCATION_TO_VALUE(searchResult + sizeof(unsigned long) + DATA_LOCATION_TO_UL(searchResult)) = value;
+}
+
+template <typename ValueType>
 void TrieLeaf<ValueType>::remove(const DatabaseKey &key, int firstCharacterIdx)
 {
     unsigned char *searchResult = find(key, firstCharacterIdx);

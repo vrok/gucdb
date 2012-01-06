@@ -29,13 +29,14 @@ private:
     int compareKeys(unsigned char *currentCharacter, unsigned char *endCharacter, const DatabaseKey &key, int firstCharacterIdx);
 
 public:
-    //unsigned char data[2 * TYPICAL_PAGE_SIZE];
-    unsigned char data[90];
+    unsigned char data[2 * TYPICAL_PAGE_SIZE];
+    //unsigned char data[90];
 
     bool isEmpty();
     bool canFit(const DatabaseKey &key, int firstCharacterIdx);
     ValueType get(const DatabaseKey &key, int firstCharactrdIdx);
     void add(const DatabaseKey &key, int firstCharacterIdx, ValueType value);
+    void update(const DatabaseKey &key, int firstCharacterIdx, ValueType value);
     void remove(const DatabaseKey &key, int firstCharacterIdx);
     void moveAllBelowToAnotherLeaf(const DatabaseKey &key, int firstCharacterIdx, TrieLeaf<ValueType> &anotherLeaf);
     unsigned char findBestSplitPoint(unsigned char leftmostPoint, unsigned char rightmostPoint);
