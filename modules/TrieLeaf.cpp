@@ -16,12 +16,14 @@ namespace Db {
 
 #define DATA_LOCATION_TO_UL(loc)         (*((unsigned long*)(loc)))
 #define DATA_LOCATION_TO_ULL(loc)        (*((unsigned long long*)(loc)))
+#define DATA_LOCATION_TO_VALUE(loc)      (*((ValueType*)(loc)))
 /* Used size is stored in the first location of the data array. */
 #define LEAF_USED_SIZE                   (DATA_LOCATION_TO_UL(data) + sizeof(unsigned long))
 #define OTHER_LEAF_USED_SIZE(leaf_ptr)   (DATA_LOCATION_TO_UL(leaf_ptr->data) + sizeof(unsigned long))
 #define DATA_AFTER_LEAF_USED_SIZE        (data + sizeof(unsigned long))
 
-unsigned char *TrieLeaf::find(const DatabaseKey &key, int firstCharacterIdx)
+template <typename ValueType>
+unsigned char *TrieLeaf<ValueType>::find(const DatabaseKey &key, int firstCharacterIdx)
 {
     unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
 
@@ -36,19 +38,22 @@ unsigned char *TrieLeaf::find(const DatabaseKey &key, int firstCharacterIdx)
             return currentLoc;
         }
 
-        currentLoc += sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(unsigned long long);
+        currentLoc += sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(ValueType);
     }
 
     return NULL;
 }
 
-void TrieLeaf::addBulk(unsigned char *source, unsigned long length)
+template <typename ValueType>
+void TrieLeaf<ValueType>::addBulk(unsigned char *source, unsigned long length)
 {
     memcpy(data + LEAF_USED_SIZE, source, length);
     DATA_LOCATION_TO_UL(data) += length;
 }
 
-int TrieLeaf::compareKeys(unsigned char *currentCharacter, unsigned char *endCharacter, const DatabaseKey &key, int firstCharacterIdx)
+template <typename ValueType>
+int TrieLeaf<ValueType>::compareKeys(unsigned char *currentCharacter,
+        unsigned char *endCharacter, const DatabaseKey &key, int firstCharacterIdx)
 {
     const unsigned char *endKeyCharacter = key.data + key.length;
     const unsigned char *currentKeyCharacter = key.data + firstCharacterIdx;
@@ -75,17 +80,19 @@ int TrieLeaf::compareKeys(unsigned char *currentCharacter, unsigned char *endCha
     }
 }
 
-unsigned long long TrieLeaf::get(const DatabaseKey &key, int firstCharacterIdx)
+template <typename ValueType>
+ValueType TrieLeaf<ValueType>::get(const DatabaseKey &key, int firstCharacterIdx)
 {
     unsigned char *searchResult = find(key, firstCharacterIdx);
     if (searchResult == NULL) {
         return 0;
     }
 
-    return DATA_LOCATION_TO_ULL(searchResult + sizeof(unsigned long) + DATA_LOCATION_TO_UL(searchResult));
+    return DATA_LOCATION_TO_VALUE(searchResult + sizeof(unsigned long) + DATA_LOCATION_TO_UL(searchResult));
 }
 
-void TrieLeaf::add(const DatabaseKey &key, int firstCharacterIdx, unsigned long long value)
+template <typename ValueType>
+void TrieLeaf<ValueType>::add(const DatabaseKey &key, int firstCharacterIdx, ValueType value)
 {
     assert(canFit(key, firstCharacterIdx));
     unsigned long activeKeyLength = key.length - firstCharacterIdx;
@@ -95,22 +102,23 @@ void TrieLeaf::add(const DatabaseKey &key, int firstCharacterIdx, unsigned long 
     memcpy((void*)(data + LEAF_USED_SIZE + sizeof(unsigned long)),
            (void*)(key.data + firstCharacterIdx), activeKeyLength);
 
-    DATA_LOCATION_TO_ULL(data + LEAF_USED_SIZE + sizeof(unsigned long) + activeKeyLength) = value;
-    DATA_LOCATION_TO_UL(data) += sizeof(unsigned long) + activeKeyLength + sizeof(unsigned long long);
+    DATA_LOCATION_TO_VALUE(data + LEAF_USED_SIZE + sizeof(unsigned long) + activeKeyLength) = value;
+    DATA_LOCATION_TO_UL(data) += sizeof(unsigned long) + activeKeyLength + sizeof(ValueType);
 }
 
-void TrieLeaf::remove(const DatabaseKey &key, int firstCharacterIdx)
+template <typename ValueType>
+void TrieLeaf<ValueType>::remove(const DatabaseKey &key, int firstCharacterIdx)
 {
     unsigned char *searchResult = find(key, firstCharacterIdx);
     if (searchResult == NULL) {
         return;
     }
 
-    unsigned long deletedSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(searchResult) + sizeof(unsigned long long);
+    unsigned long deletedSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(searchResult) + sizeof(ValueType);
     unsigned char *currentLoc = searchResult + deletedSlotSize;
 
     while (currentLoc < (data + LEAF_USED_SIZE)) {
-        unsigned long currentSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(unsigned long long);
+        unsigned long currentSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(ValueType);
         memmove(currentLoc - deletedSlotSize, currentLoc, currentSlotSize);
         currentLoc += currentSlotSize;
     }
@@ -118,24 +126,28 @@ void TrieLeaf::remove(const DatabaseKey &key, int firstCharacterIdx)
     DATA_LOCATION_TO_UL(data) -= deletedSlotSize;
 }
 
-bool TrieLeaf::isEmpty()
+template <typename ValueType>
+bool TrieLeaf<ValueType>::isEmpty()
 {
     /* Empty node only stores its size in first few bytes. */
     return LEAF_USED_SIZE == sizeof(unsigned long);
 }
 
-bool TrieLeaf::canFit(const DatabaseKey &key, int firstCharacterIdx)
+template <typename ValueType>
+bool TrieLeaf<ValueType>::canFit(const DatabaseKey &key, int firstCharacterIdx)
 {
-    return (key.length - firstCharacterIdx + sizeof(unsigned int) + sizeof(unsigned long long)) <= (sizeof(data) - LEAF_USED_SIZE);
+    return (key.length - firstCharacterIdx + sizeof(unsigned int) + sizeof(ValueType)) <= (sizeof(data) - LEAF_USED_SIZE);
 }
 
-void TrieLeaf::moveAllBelowToAnotherLeaf(const DatabaseKey &key, int firstCharacterIdx, TrieLeaf &anotherLeaf)
+template <typename ValueType>
+void TrieLeaf<ValueType>::moveAllBelowToAnotherLeaf(const DatabaseKey &key,
+        int firstCharacterIdx, TrieLeaf<ValueType> &anotherLeaf)
 {
     unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
     unsigned long shift = 0;
 
     while (currentLoc < (data + LEAF_USED_SIZE)) {
-        unsigned long currentSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(unsigned long long);
+        unsigned long currentSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(ValueType);
 
         int strCompare = compareKeys(currentLoc + sizeof(unsigned long),
                                      currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc),
@@ -157,14 +169,15 @@ void TrieLeaf::moveAllBelowToAnotherLeaf(const DatabaseKey &key, int firstCharac
     DATA_LOCATION_TO_UL(data) -= shift;
 }
 
-unsigned char TrieLeaf::findBestSplitPoint(unsigned char leftmostPoint, unsigned char rightmostPoint)
+template <typename ValueType>
+unsigned char TrieLeaf<ValueType>::findBestSplitPoint(unsigned char leftmostPoint, unsigned char rightmostPoint)
 {
     unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
     unsigned long sizesPerFirstCharacter[256];
     memset(sizesPerFirstCharacter, 0, sizeof(sizesPerFirstCharacter));
 
     while (currentLoc < (data + LEAF_USED_SIZE)) {
-        unsigned long currentSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(unsigned long long);
+        unsigned long currentSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(ValueType);
 
         assert(DATA_LOCATION_TO_UL(currentLoc) != 0); /* We can't get first character of an empty string. */
 
@@ -205,7 +218,8 @@ unsigned char TrieLeaf::findBestSplitPoint(unsigned char leftmostPoint, unsigned
     return potentialSplitPoint;
 }
 
-unsigned long long TrieLeaf::stripLeadingCharacter()
+template<typename ValueType>
+ValueType TrieLeaf<ValueType>::stripLeadingCharacter()
 {
     unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
     unsigned long long result = 0;
@@ -213,13 +227,13 @@ unsigned long long TrieLeaf::stripLeadingCharacter()
 
     while (currentLoc < (data + LEAF_USED_SIZE)) {
         unsigned long currentKeyLen = DATA_LOCATION_TO_UL(currentLoc);
-        unsigned long currentSlotSize = sizeof(unsigned long) + currentKeyLen + sizeof(unsigned long long);
+        unsigned long currentSlotSize = sizeof(unsigned long) + currentKeyLen + sizeof(ValueType);
 
         if (DATA_LOCATION_TO_UL(currentLoc) == 1) {
             /* Key ends exactly in the leaf. We are expanding vertically, thus this value should
              * be moved upwards, to the newly created node.
              */
-            result = DATA_LOCATION_TO_ULL(currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc));
+            result = DATA_LOCATION_TO_VALUE(currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc));
             shift += currentSlotSize;
             currentLoc += currentSlotSize;
             continue;
@@ -238,36 +252,44 @@ unsigned long long TrieLeaf::stripLeadingCharacter()
     return result;
 }
 
-TrieLeafNavigator TrieLeaf::produceNaviagor()
+template<typename ValueType>
+TrieLeafNavigator<ValueType> TrieLeaf<ValueType>::produceNaviagor()
 {
-    return TrieLeafNavigator(DATA_AFTER_LEAF_USED_SIZE, this);
+    return TrieLeafNavigator<ValueType>(DATA_AFTER_LEAF_USED_SIZE, this);
 }
 
-
-TrieLeafNavigator::TrieLeafNavigator(unsigned char *currentLoc, TrieLeaf *context)
+template<typename ValueType>
+TrieLeafNavigator<ValueType>::TrieLeafNavigator(unsigned char *currentLoc, TrieLeaf<ValueType> *context)
         : currentLoc(currentLoc), context(context) {
 }
 
-unsigned char* TrieLeafNavigator::getPointer() {
+template<typename ValueType>
+unsigned char* TrieLeafNavigator<ValueType>::getPointer() {
     return currentLoc + sizeof(unsigned long);
 }
 
-unsigned int TrieLeafNavigator::getLength() {
+template<typename ValueType>
+unsigned int TrieLeafNavigator<ValueType>::getLength() {
     return DATA_LOCATION_TO_UL(currentLoc);
 }
 
-unsigned long long TrieLeafNavigator::getValue() {
-    return DATA_LOCATION_TO_ULL(currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc));
+template<typename ValueType>
+ValueType TrieLeafNavigator<ValueType>::getValue() {
+    return DATA_LOCATION_TO_VALUE(currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc));
 }
 
-void TrieLeafNavigator::next() {
-    currentLoc += sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(unsigned long long);
+template<typename ValueType>
+void TrieLeafNavigator<ValueType>::next() {
+    currentLoc += sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(ValueType);
 }
 
-bool TrieLeafNavigator::isEnd() {
+template<typename ValueType>
+bool TrieLeafNavigator<ValueType>::isEnd() {
     return currentLoc >= (context->data + OTHER_LEAF_USED_SIZE(context));
 }
 
+template class TrieLeaf<unsigned long long>;
+template class TrieLeafNavigator<unsigned long long>;
 
 }
 

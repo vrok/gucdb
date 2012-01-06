@@ -15,9 +15,13 @@ namespace Db {
 // We might prefer to use actual page size.
 #define TYPICAL_PAGE_SIZE 4096
 
+template <typename ValueType>
 class TrieLeafNavigator;
 
-
+/* Important: ValueType should be small, as it is often passed by value (or copied in some other way).
+ * Ideally, it should be derived from a built-in type, like an offset or a pointer.
+ */
+template <typename ValueType>
 class TrieLeaf {
 private:
     unsigned char *find(const DatabaseKey &key, int firstCharacterIdx);
@@ -30,29 +34,29 @@ public:
 
     bool isEmpty();
     bool canFit(const DatabaseKey &key, int firstCharacterIdx);
-    unsigned long long get(const DatabaseKey &key, int firstCharactrdIdx);
-    void add(const DatabaseKey &key, int firstCharacterIdx, unsigned long long value);
+    ValueType get(const DatabaseKey &key, int firstCharactrdIdx);
+    void add(const DatabaseKey &key, int firstCharacterIdx, ValueType value);
     void remove(const DatabaseKey &key, int firstCharacterIdx);
-    void moveAllBelowToAnotherLeaf(const DatabaseKey &key, int firstCharacterIdx, TrieLeaf &anotherLeaf);
+    void moveAllBelowToAnotherLeaf(const DatabaseKey &key, int firstCharacterIdx, TrieLeaf<ValueType> &anotherLeaf);
     unsigned char findBestSplitPoint(unsigned char leftmostPoint, unsigned char rightmostPoint);
-    unsigned long long stripLeadingCharacter();
+    ValueType stripLeadingCharacter();
 
-    TrieLeafNavigator produceNaviagor();
+    TrieLeafNavigator<ValueType> produceNaviagor();
 };
 
-
+template <typename ValueType>
 struct TrieLeafNavigator {
 private:
-    friend class TrieLeaf;
+    friend class TrieLeaf<ValueType>;
     unsigned char *currentLoc;
-    TrieLeaf *context;
+    TrieLeaf<ValueType> *context;
 
-    TrieLeafNavigator(unsigned char *currentLoc, TrieLeaf *context);
+    TrieLeafNavigator(unsigned char *currentLoc, TrieLeaf<ValueType> *context);
 public:
 
     unsigned char *getPointer();
     unsigned int getLength();
-    unsigned long long getValue();
+    ValueType getValue();
 
     void next();
     bool isEnd();

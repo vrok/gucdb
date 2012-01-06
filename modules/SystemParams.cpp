@@ -24,15 +24,18 @@ long SystemParams::pageSize() {
     return _pageSize;
 }
 
+#if 0
 long SystemParams::initialIndexSize() {
     return minimalIndexExpandSize() * INITIAL_NUMBER_OF_EMPTY_PAGES;
 }
+#endif
 
 long SystemParams::initialIndexMapSize() {
     /* one bit per trie node */
     return INITIAL_NUMBER_OF_EMPTY_PAGES / 8;
 }
 
+#if 0
 long SystemParams::minimalIndexExpandSize() {
     long pSize = pageSize();
 
@@ -46,5 +49,6 @@ long SystemParams::minimalIndexExpandSize() {
         return pSize;
     }
 }
+#endif
 
 } /* namespace Db */

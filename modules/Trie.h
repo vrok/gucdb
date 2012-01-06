@@ -20,18 +20,19 @@ using namespace std;
 
 namespace Db {
 
+template <typename ValueType>
 class Trie {
 private:
-    BinFile<TrieNode> *nodes;
-    BinFile<TrieLeaf> *leaves;
+    BinFile<TrieNode<ValueType> > *nodes;
+    BinFile<TrieLeaf<ValueType> > *leaves;
 
 public:
-	Trie(BinFile<TrieNode> *nodes, BinFile<TrieLeaf> *leaves);
+	Trie(BinFile<TrieNode<ValueType> > *nodes, BinFile<TrieLeaf<ValueType> > *leaves);
 	~Trie();
 
 	void initializeEmpty();
-    void addKey(const DatabaseKey &key, unsigned long long value);
-    unsigned long long get(const DatabaseKey &key);
+    void addKey(const DatabaseKey &key, ValueType value);
+    ValueType get(const DatabaseKey &key);
     void dump();
 };
 

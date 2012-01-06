@@ -10,11 +10,13 @@
 
 namespace Db {
 
+typedef unsigned long long ValueAddress;
+
 class Database {
 private:
 	string dbDirectory;
 
-	Trie *mainIndex;
+	Trie<unsigned long long> *mainIndex;
 public:
 	Database(const string &dbDirectory);
 	virtual ~Database();

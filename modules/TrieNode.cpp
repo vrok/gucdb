@@ -13,12 +13,14 @@
 
 namespace Db {
 
-void TrieNode::setChild(unsigned char character,
+template<typename ValueType>
+void TrieNode<ValueType>::setChild(unsigned char character,
         const TriePointer &childPointer) {
     memcpy(&children[character], &childPointer, sizeof(TriePointer));
 }
 
-void TrieNode::setChildrenRange(unsigned char firstCharacter,
+template<typename ValueType>
+void TrieNode<ValueType>::setChildrenRange(unsigned char firstCharacter,
         unsigned char lastCharacter, const TriePointer &childPointer) {
 
     assert(firstCharacter <= lastCharacter);
@@ -31,7 +33,8 @@ void TrieNode::setChildrenRange(unsigned char firstCharacter,
     }
 }
 
-bool TrieNode::isLinkPure(unsigned char character)
+template<typename ValueType>
+bool TrieNode<ValueType>::isLinkPure(unsigned char character)
 {
     if (character == 0) {
         return children[character + 1] != children[character];
@@ -43,7 +46,8 @@ bool TrieNode::isLinkPure(unsigned char character)
     }
 }
 
-unsigned char TrieNode::checkLeftmostCharWithLink(unsigned char initialCharacter, const TriePointer &childPointer)
+template<typename ValueType>
+unsigned char TrieNode<ValueType>::checkLeftmostCharWithLink(unsigned char initialCharacter, const TriePointer &childPointer)
 {
     unsigned char currentCharacter = initialCharacter;
 
@@ -58,7 +62,8 @@ unsigned char TrieNode::checkLeftmostCharWithLink(unsigned char initialCharacter
     return currentCharacter + 1;
 }
 
-unsigned char TrieNode::checkRightmostCharWithLink(unsigned char initialCharacter, const TriePointer &childPointer)
+template<typename ValueType>
+unsigned char TrieNode<ValueType>::checkRightmostCharWithLink(unsigned char initialCharacter, const TriePointer &childPointer)
 {
     unsigned char currentCharacter = initialCharacter;
 
@@ -72,5 +77,7 @@ unsigned char TrieNode::checkRightmostCharWithLink(unsigned char initialCharacte
 
     return currentCharacter - 1;
 }
+
+template class TrieNode<unsigned long long>;
 
 } /* namespace Db */

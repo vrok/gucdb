@@ -18,17 +18,16 @@ using namespace std;
 
 namespace Db {
 
-
 Database::Database(const string & dbDirectory)
 : dbDirectory(dbDirectory)
 {
 
-    mainIndex = new Trie(new BinFile<TrieNode>(dbDirectory + "/main.nodes",
+    mainIndex = new Trie<ValueAddress>(new BinFile<TrieNode<ValueAddress> >(dbDirectory + "/main.nodes",
                                                new BinFileMap(dbDirectory + "/main.nodes.map"),
-                                               BinFile<TrieNode>::minimalIndexExpandSize() * 32),
-                         new BinFile<TrieLeaf>(dbDirectory + "/main.leaves",
+                                               BinFile<TrieNode<ValueAddress> >::minimalIndexExpandSize() * 32),
+                                       new BinFile<TrieLeaf<ValueAddress> >(dbDirectory + "/main.leaves",
                                                new BinFileMap(dbDirectory + "/main.leaves.map"),
-                                               BinFile<TrieLeaf>::minimalIndexExpandSize() * 1));
+                                               BinFile<TrieLeaf<ValueAddress> >::minimalIndexExpandSize() * 1));
 #if 0
 	TrieNode *newNode = mainIndex->getNewBin();
 	cout << "New node: " << newNode << endl;

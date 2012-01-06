@@ -12,6 +12,8 @@
 #include <cstring>
 using namespace std;
 
+#include "Trie.h"
+#include "Database.h"
 #include "SystemParams.h"
 #include "TrieNode.h"
 #include "TrieLeaf.h"
@@ -96,7 +98,7 @@ unsigned long BinFile<BinType>::minimalIndexExpandSize() {
     }
 }
 
-template class BinFile<TrieNode>;
-template class BinFile<TrieLeaf>;
+template class BinFile<TrieNode<ValueAddress> >;
+template class BinFile<TrieLeaf<ValueAddress> >;
 
 } /* namespace Db */

@@ -14,10 +14,11 @@ namespace Db {
 
 #define NODE_SIZE 0xff + 1
 
+template<typename ValueType>
 struct TrieNode {
     TriePointer children[NODE_SIZE];
 
-    unsigned long long values[NODE_SIZE];
+    ValueType values[NODE_SIZE];
 
     void setChild(unsigned char character, const TriePointer &childPointer);
 

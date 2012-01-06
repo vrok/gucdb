@@ -28,8 +28,10 @@ using namespace std;
 
 namespace Db {
 
-Trie::Trie(BinFile<TrieNode> *nodes, BinFile<TrieLeaf> *leaves)
-    : nodes(nodes), leaves(leaves) {
+template<typename ValueType>
+Trie<ValueType>::Trie(BinFile<TrieNode<ValueType> > *nodes, BinFile<TrieLeaf<ValueType> > *leaves)
+    : nodes(nodes), leaves(leaves)
+{
 
     switch (leaves->openMMapedFile()) {
     case MMapedFile::OPENED:
@@ -61,17 +63,21 @@ Trie::Trie(BinFile<TrieNode> *nodes, BinFile<TrieLeaf> *leaves)
 
 }
 
-Trie::~Trie() {
+template<typename ValueType>
+Trie<ValueType>::~Trie()
+{
     nodes->closeMMapedFile();
     leaves->closeMMapedFile();
 }
 
-void Trie::initializeEmpty() {
+template<typename ValueType>
+void Trie<ValueType>::initializeEmpty()
+{
     //cout << "Initializing empty trie file" << endl;
 
     unsigned long long rootNodeId = nodes->getNewBinByID();
     assert(rootNodeId == 0);
-    TrieNode *rootNode = nodes->getBin(rootNodeId);
+    TrieNode<ValueType> *rootNode = nodes->getBin(rootNodeId);
 
     unsigned long long leafID = leaves->getNewBinByID();
 
@@ -83,10 +89,12 @@ void Trie::initializeEmpty() {
     rootNode->setChildrenRange(0x00, 0xff, TriePointer(true, leafID));
 }
 
-unsigned long long Trie::get(const DatabaseKey &key) {
+template<typename ValueType>
+ValueType Trie<ValueType>::get(const DatabaseKey &key)
+{
     int currentCharIdx = 0;
 
-    TrieNode *currentNode = nodes->getBin(0);
+    TrieNode<ValueType> *currentNode = nodes->getBin(0);
 
     while (true) {
         TriePointer *currentPointer = &currentNode->children[key.data[currentCharIdx]];
@@ -99,7 +107,7 @@ unsigned long long Trie::get(const DatabaseKey &key) {
                 return currentNode->values[key.data[currentCharIdx - 1]];
             }
         } else {
-            TrieLeaf *leaf = leaves->getBin(currentPointer->link);
+            TrieLeaf<ValueType> *leaf = leaves->getBin(currentPointer->link);
             return leaf->get(key, currentCharIdx);
         }
     }
@@ -108,10 +116,12 @@ unsigned long long Trie::get(const DatabaseKey &key) {
     return 0;
 }
 
-void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
+template<typename ValueType>
+void Trie<ValueType>::addKey(const DatabaseKey &key, ValueType value)
+{
     int currentCharIdx = 0;
 
-    TrieNode *currentNode = nodes->getBin(0); // root node always has id = 0
+    TrieNode<ValueType> *currentNode = nodes->getBin(0); // root node always has id = 0
     //TriePointer *currentPointer = &currentNode->children[key.data[currentCharIdx]];
 
     while (true) {
@@ -119,13 +129,16 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
         TriePointer *currentPointer = &currentNode->children[key.data[currentCharIdx]];
 
         if (currentPointer->isNull()) {
-            unsigned char leftmostCharWithCurrentLink = currentNode->checkLeftmostCharWithLink(key.data[currentCharIdx], *currentPointer);
-            unsigned char rightmostCharWithCurrentLink = currentNode->checkRightmostCharWithLink(key.data[currentCharIdx], *currentPointer);
+            unsigned char leftmostCharWithCurrentLink = currentNode->checkLeftmostCharWithLink(key.data[currentCharIdx],
+                                                                                               *currentPointer);
+            unsigned char rightmostCharWithCurrentLink = currentNode->checkRightmostCharWithLink(key.data[currentCharIdx],
+                                                                                                 *currentPointer);
 
             unsigned long long newLeafId = leaves->getNewBinByID();
-            TrieLeaf *newLeaf = leaves->getBin(newLeafId);
+            TrieLeaf<ValueType> *newLeaf = leaves->getBin(newLeafId);
 
-            currentNode->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink, TriePointer(true, newLeafId));
+            currentNode->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink,
+                                          TriePointer(true, newLeafId));
 
             newLeaf->add(key, currentCharIdx, value);
             return;
@@ -144,7 +157,7 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
                 return;
             }
         } else {
-            TrieLeaf *leaf = leaves->getBin(currentPointer->link);
+            TrieLeaf<ValueType> *leaf = leaves->getBin(currentPointer->link);
 
             if (leaf->canFit(key, currentCharIdx)) {
                 leaf->add(key, currentCharIdx, value);
@@ -162,7 +175,7 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
                 }
 
                 unsigned long long newNodeIndex = nodes->getNewBinByID();
-                TrieNode *newNode = nodes->getBin(newNodeIndex);
+                TrieNode<ValueType> *newNode = nodes->getBin(newNodeIndex);
                 currentPointer->leaf = 0;
                 currentPointer->link = newNodeIndex;
                 newNode->values[key.data[currentCharIdx]] = newNodeValue;
@@ -180,10 +193,12 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
                 }
             } else {
                 unsigned long long newLeafId = leaves->getNewBinByID();
-                TrieLeaf *newLeaf = leaves->getBin(newLeafId);
+                TrieLeaf<ValueType> *newLeaf = leaves->getBin(newLeafId);
 
-                unsigned char leftmostCharWithCurrentLink = currentNode->checkLeftmostCharWithLink(key.data[currentCharIdx], *currentPointer);
-                unsigned char rightmostCharWithCurrentLink = currentNode->checkRightmostCharWithLink(key.data[currentCharIdx], *currentPointer);
+                unsigned char leftmostCharWithCurrentLink = currentNode->checkLeftmostCharWithLink(key.data[currentCharIdx],
+                                                                                                   *currentPointer);
+                unsigned char rightmostCharWithCurrentLink = currentNode->checkRightmostCharWithLink(key.data[currentCharIdx],
+                                                                                                     *currentPointer);
 
                 unsigned char splitPoint = leaf->findBestSplitPoint(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink);
 
@@ -214,7 +229,9 @@ void Trie::addKey(const DatabaseKey &key, unsigned long long value) {
     }
 }
 
-void Trie::dump() {
+template<typename ValueType>
+void Trie<ValueType>::dump()
+{
     int indendFactor = 4;
     int indent = indendFactor;
     string ind = "    ";
@@ -229,7 +246,7 @@ void Trie::dump() {
     while (! nodesQueue.empty()) {
         unsigned long long currentId = nodesQueue.front();
         nodesQueue.pop();
-        TrieNode *currentNode = nodes->getBin(currentId);
+        TrieNode<ValueType> *currentNode = nodes->getBin(currentId);
 
         cout << ind << "<node id=\"" << currentId << "\">" << endl;
 
@@ -253,10 +270,10 @@ void Trie::dump() {
                 if (! currentPointer->isNull()) {
                     if (currentPointer->leaf == 1) {
                         leavesQueue.push(currentPointer->link);
-                        cout << "\" type=\"leaf\" link=\"" << currentPointer->link << "\" />" << endl;
+                        cout << "\" type=\"leaf\" link=\"" << ((unsigned long long) currentPointer->link) << "\" />" << endl;
                     } else {
                         nodesQueue.push(currentPointer->link);
-                        cout << "\" type=\"node\" link=\"" << currentPointer->link << "\" />" << endl;
+                        cout << "\" type=\"node\" link=\"" << ((unsigned long long) currentPointer->link) << "\" />" << endl;
                     }
                 } else {
                     cout << "\" type=\"NULL\" link=\"NULL\" />" << endl;
@@ -272,10 +289,10 @@ void Trie::dump() {
     while (! leavesQueue.empty()) {
         unsigned long long currentId = leavesQueue.front();
         leavesQueue.pop();
-        TrieLeaf *currentLeaf = leaves->getBin(currentId);
+        TrieLeaf<ValueType> *currentLeaf = leaves->getBin(currentId);
         cout << ind << "<leaf id=\"" << currentId << "\">" << endl;
 
-        for (TrieLeafNavigator navigator = currentLeaf->produceNaviagor(); !navigator.isEnd(); navigator.next()) {
+        for (TrieLeafNavigator<ValueType> navigator = currentLeaf->produceNaviagor(); !navigator.isEnd(); navigator.next()) {
             assert(navigator.getLength() < (sizeof(tmpValue) - 1));
 
             strncpy(tmpValue, (char*) navigator.getPointer(), navigator.getLength());
@@ -290,5 +307,7 @@ void Trie::dump() {
 
     cout << "</trie>" << endl;
 }
+
+template class Trie<unsigned long long>;
 
 } /* namespace Db */
