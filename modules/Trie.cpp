@@ -159,6 +159,10 @@ void Trie<ValueType>::addKey(const DatabaseKey &key, ValueType value)
         } else {
             TrieLeaf<ValueType> *leaf = leaves->getBin(currentPointer->link);
 
+            if (leaf->find(key, currentCharIdx)) {
+                leaf->update(key, currentCharIdx, value);
+                return;
+            } else
             if (leaf->canFit(key, currentCharIdx)) {
                 leaf->add(key, currentCharIdx, value);
                 return;

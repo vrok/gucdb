@@ -5,6 +5,8 @@
  *      Author: m
  */
 
+#include "Trie.h"
+
 #include "TrieLeaf.h"
 
 #include <cassert>

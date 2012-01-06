@@ -18,12 +18,17 @@ namespace Db {
 template <typename ValueType>
 class TrieLeafNavigator;
 
+template <typename ValueType>
+class Trie;
+
 /* Important: ValueType should be small, as it is often passed by value (or copied in some other way).
  * Ideally, it should be derived from a built-in type, like an offset or a pointer.
  */
 template <typename ValueType>
 class TrieLeaf {
 private:
+    friend class Trie<ValueType>;
+
     unsigned char *find(const DatabaseKey &key, int firstCharacterIdx);
     void addBulk(unsigned char *source, unsigned long length);
     int compareKeys(unsigned char *currentCharacter, unsigned char *endCharacter, const DatabaseKey &key, int firstCharacterIdx);
