@@ -12,7 +12,7 @@ namespace {
 class TrieLeafTest: public ::testing::Test {
 protected:
 
-    Db::TrieNode node;
+    Db::TrieNode<unsigned long long> node;
 
     TrieLeafTest() {
     }

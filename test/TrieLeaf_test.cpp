@@ -18,7 +18,7 @@ namespace {
 class TrieLeafTest: public ::testing::Test {
 protected:
 
-    Db::TrieLeaf leaf;
+    Db::TrieLeaf<unsigned long long> leaf;
 
     TrieLeafTest() {
     }
@@ -170,7 +170,7 @@ TEST_F(TrieLeafTest, TestMoveToAnother)
     ASSERT_EQ(3000, leaf.get(key1, 0));
     ASSERT_EQ(5000, leaf.get(key2, 0));
 
-    Db::TrieLeaf anotherLeaf;
+    Db::TrieLeaf<unsigned long long> anotherLeaf;
     memset((void*) &anotherLeaf, 0, sizeof(anotherLeaf));
 
     Db::DatabaseKey dividing_key;
@@ -202,7 +202,7 @@ TEST_F(TrieLeafTest, TestMoveToAnotherDivideByExisting)
 
     ASSERT_EQ(3000, leaf.get(key, 0));
 
-    Db::TrieLeaf anotherLeaf;
+    Db::TrieLeaf<unsigned long long> anotherLeaf;
     memset((void*) &anotherLeaf, 0, sizeof(anotherLeaf));
 
     Db::DatabaseKey dividing_key;
@@ -232,7 +232,7 @@ TEST_F(TrieLeafTest, TestBulkMoveToAnother)
         leaf.add(key, 0, i);
     }
 
-    Db::TrieLeaf anotherLeaf;
+    Db::TrieLeaf<unsigned long long> anotherLeaf;
     memset((void*) &anotherLeaf, 0, sizeof(anotherLeaf));
 
     Db::DatabaseKey dividing_key;
