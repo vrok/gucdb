@@ -29,6 +29,8 @@ struct TrieNode {
     unsigned char checkLeftmostCharWithLink(unsigned char initialCharacter, const TriePointer &childPointer);
 
     unsigned char checkRightmostCharWithLink(unsigned char initialCharacter, const TriePointer &childPointer);
+
+    bool isPointerTheOnlyNonNullField(const TriePointer &childPointer);
 };
 
 } /* namespace Db */

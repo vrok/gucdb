@@ -111,6 +111,26 @@ TEST_F(TrieLeafTest, TestIsLinkPureMiddleBoth)
     ASSERT_EQ(false, node.isLinkPure(40));
 }
 
+TEST_F(TrieLeafTest, TestPointerIsTheOnlyNonNullField)
+{
+    Db::TriePointer pointer(false, 12345);
+
+    node.setChildrenRange(10, 20, pointer);
+
+    ASSERT_TRUE(node.isPointerTheOnlyNonNullField(pointer));
+}
+
+TEST_F(TrieLeafTest, TestPointerIsNotTheOnlyNonNullField)
+{
+    Db::TriePointer pointer1(false, 12345);
+    Db::TriePointer pointer2(false, 54321);
+
+    node.setChildrenRange(10, 20, pointer1);
+    node.setChildrenRange(50, 100, pointer2);
+
+    ASSERT_FALSE(node.isPointerTheOnlyNonNullField(pointer1));
+}
+
 }
 
 int main(int argc, char **argv) {

@@ -78,6 +78,24 @@ unsigned char TrieNode<ValueType>::checkRightmostCharWithLink(unsigned char init
     return currentCharacter - 1;
 }
 
+template<typename ValueType>
+bool TrieNode<ValueType>::isPointerTheOnlyNonNullField(const TriePointer &childPointer)
+{
+    for (int i = 0x00; i < NODE_SIZE; i++) {
+        /* Yes, we check children and values in the same loop. */
+
+        if (!children[i].isNull() && children[i] != childPointer) {
+            return false;
+        }
+
+        if (values[i] != 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 template class TrieNode<unsigned long long>;
 
 } /* namespace Db */
