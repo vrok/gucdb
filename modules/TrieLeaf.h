@@ -34,8 +34,8 @@ private:
     int compareKeys(unsigned char *currentCharacter, unsigned char *endCharacter, const DatabaseKey &key, int firstCharacterIdx);
 
 public:
-    unsigned char data[2 * TYPICAL_PAGE_SIZE];
-    //unsigned char data[90];
+    //unsigned char data[2 * TYPICAL_PAGE_SIZE];
+    unsigned char data[30];
 
     bool isEmpty();
     bool canFit(const DatabaseKey &key, int firstCharacterIdx);

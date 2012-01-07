@@ -67,6 +67,17 @@ int Database::write(const char *key, unsigned long long value)
     return 0;
 }
 
+int Database::remove(const char *key)
+{
+    DatabaseKey dbKey;
+
+    memcpy(dbKey.data, key, strlen(key));
+    dbKey.length = strlen(key);
+
+    mainIndex->deleteKey(dbKey);
+    return 0;
+}
+
 void Database::dump()
 {
     mainIndex->dump();

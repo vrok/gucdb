@@ -22,6 +22,10 @@ int main(int argc, char *argv[])
             cin >> key >> value;
             cout << dbInstance.write(key.c_str(), value) << endl;
         } else
+        if (cmd == "remove") {
+            cin >> key;
+            cout << dbInstance.remove(key.c_str()) << endl;
+        } else
         if (cmd == "dump") {
             dbInstance.dump();
         } else

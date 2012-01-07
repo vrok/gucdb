@@ -23,6 +23,7 @@ public:
 
 	unsigned long long read(const char *key);
 	int write(const char *key, unsigned long long value);
+	int remove(const char *key);
 	void dump();
 };
 
