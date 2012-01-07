@@ -159,7 +159,7 @@ void Trie<ValueType>::addKey(const DatabaseKey &key, ValueType value)
         } else {
             TrieLeaf<ValueType> *leaf = leaves->getBin(currentPointer->link);
 
-            if (leaf->find(key, currentCharIdx)) {
+            if (leaf->find(key, currentCharIdx) != NULL) {
                 leaf->update(key, currentCharIdx, value);
                 return;
             } else
@@ -229,6 +229,88 @@ void Trie<ValueType>::addKey(const DatabaseKey &key, ValueType value)
                     currentNode->setChildrenRange(splitPoint, rightmostCharWithCurrentLink, currentPointerCopy);
                 }
             }
+        }
+    }
+}
+
+template<typename ValueType>
+void Trie<ValueType>::deleteKey(const DatabaseKey &key)
+{
+    /* We need to remember the nodes we visit, we need them in a later phase.
+     * In case this turns out to be slow (it uses heap), one alternative
+     * that might be viable is doing this deletion recursively (we would
+     * just use stack then).
+     */
+    vector<TrieNode<ValueType>*> path;
+    path.reserve(10);
+
+    int currentCharIdx = 0;
+
+    TrieNode<ValueType> *currentNode = nodes->getBin(0);
+    path.push_back(currentNode);
+    TriePointer *currentPointer;
+
+    while (currentCharIdx < key.length) {
+        currentPointer = &currentNode->children[key.data[currentCharIdx]];
+
+        if (currentPointer->leaf == 0) {
+            currentCharIdx++;
+            currentNode = nodes->getBin(currentPointer->link);
+
+            if (currentCharIdx == key.length) {
+                currentNode->values[key.data[currentCharIdx - 1]] = 0;
+
+                if (currentNode->isPointerTheOnlyNonNullField(TriePointer())) {
+                    nodes->freeBin(currentPointer->link);
+                } else {
+                    return;
+                }
+            } else {
+                path.push_back(currentNode);
+            }
+        } else {
+            TrieLeaf<ValueType> *leaf = leaves->getBin(currentPointer->link);
+            leaf->remove(key, currentCharIdx);
+
+            if (leaf->isEmpty()) {
+                leaves->freeBin(currentPointer->link);
+            }
+
+            break;
+        }
+    }
+
+    int nodeCount = path.size();
+
+    for (int i = nodeCount - 1; i >= 0; --i) {
+        TriePointer &currentLink = path[i]->children[key.data[i]];
+        bool shouldContinue = path[i]->isPointerTheOnlyNonNullField(currentLink);
+
+        if (shouldContinue) {
+            assert(currentLink.leaf == 0);
+
+            nodes->freeBin(currentLink.link);
+            path[i]->setChildrenRange(0x00, 0xff, TriePointer());
+        } else {
+            unsigned char leftmostCharWithCurrentLink = path[i]->checkLeftmostCharWithLink(key.data[i], currentLink);
+            unsigned char rightmostCharWithCurrentLink = path[i]->checkRightmostCharWithLink(key.data[i], currentLink);
+
+            /* We could just fill pointers from the leftmost to the rightmost with zeros,
+             * but we want to maximally fill the leaves we have, so try to merge the pointers with
+             * their neighbours.
+             */
+            if ((leftmostCharWithCurrentLink > 0) && !path[i]->children[leftmostCharWithCurrentLink - 1].isNull()) {
+                path[i]->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink,
+                                          path[i]->children[leftmostCharWithCurrentLink - 1]);
+            } else
+            if ((rightmostCharWithCurrentLink < 0xff) && !path[i]->children[rightmostCharWithCurrentLink + 1].isNull()) {
+                path[i]->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink,
+                                          path[i]->children[rightmostCharWithCurrentLink + 1]);
+            } else {
+                path[i]->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink, TriePointer());
+            }
+
+            break;
         }
     }
 }

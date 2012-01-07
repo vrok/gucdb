@@ -4,12 +4,16 @@ import random
 import sys
 
 MAX_LEN = 9
-TEST_LEN = 20000
+TEST_LEN = 90
+REMOVE_THRESHOLD = 6
 
+all_db = {}
 db = {}
 
 input_lines = []
 output_lines = []
+
+(WRITE, REMOVE, READ) = range(3)
 
 for i in xrange(TEST_LEN):
     test_len = random.randint(1, MAX_LEN)
@@ -19,20 +23,36 @@ for i in xrange(TEST_LEN):
         chars.append(chr(random.randint(33, 126)))
     key = ''.join(chars)
 
-    if random.randint(0, 1):
+    what_op = random.randint(0, 2)
+
+    if what_op == WRITE:
         if key in db:
             continue
         db[key] = random.randint(1, 10000)
+        all_db[key] = db[key]
         input_lines.append('write %s %d' % (key, db[key]))
         output_lines.append('0')
-    else:
+    elif what_op == REMOVE:
+        if random.randint(0, REMOVE_THRESHOLD) != 0:
+            continue
+
         try:
             rand_index = random.randint(0, len(db) - 1)
         except ValueError:
             continue # ignore, db might still be empty
-        key, value = db.items()[rand_index]
+        key = db.keys()[rand_index]
+
+        del db[key]
+        input_lines.append('remove %s' % key)
+        output_lines.append('0')
+    else: # READ
+        try:
+            rand_index = random.randint(0, len(all_db) - 1)
+        except ValueError:
+            continue # ignore, db might still be empty
+        key = all_db.keys()[rand_index]
         input_lines.append('read %s' % key)
-        output_lines.append(str(db[key]))
+        output_lines.append(str(db.get(key, 0)))
 
 input_lines.append('exit')
 

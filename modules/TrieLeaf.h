@@ -35,7 +35,7 @@ private:
 
 public:
     //unsigned char data[2 * TYPICAL_PAGE_SIZE];
-    unsigned char data[30];
+    unsigned char data[90];
 
     bool isEmpty();
     bool canFit(const DatabaseKey &key, int firstCharacterIdx);

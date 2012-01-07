@@ -32,6 +32,7 @@ public:
 
 	void initializeEmpty();
     void addKey(const DatabaseKey &key, ValueType value);
+    void deleteKey(const DatabaseKey &key);
     ValueType get(const DatabaseKey &key);
     void dump();
 };
