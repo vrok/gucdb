@@ -260,9 +260,7 @@ void Trie<ValueType>::deleteKey(const DatabaseKey &key)
             if (currentCharIdx == key.length) {
                 currentNode->values[key.data[currentCharIdx - 1]] = 0;
 
-                if (currentNode->isPointerTheOnlyNonNullField(TriePointer())) {
-                    nodes->freeBin(currentPointer->link);
-                } else {
+                if (! currentNode->isPointerTheOnlyNonNullField(TriePointer())) {
                     return;
                 }
             } else {
@@ -272,8 +270,8 @@ void Trie<ValueType>::deleteKey(const DatabaseKey &key)
             TrieLeaf<ValueType> *leaf = leaves->getBin(currentPointer->link);
             leaf->remove(key, currentCharIdx);
 
-            if (leaf->isEmpty()) {
-                leaves->freeBin(currentPointer->link);
+            if (! leaf->isEmpty()) {
+                return;
             }
 
             break;
@@ -287,9 +285,12 @@ void Trie<ValueType>::deleteKey(const DatabaseKey &key)
         bool shouldContinue = path[i]->isPointerTheOnlyNonNullField(currentLink);
 
         if (shouldContinue) {
-            assert(currentLink.leaf == 0);
+            if (currentLink.leaf == 1) {
+                leaves->freeBin(currentLink.link);
+            } else {
+                nodes->freeBin(currentLink.link);
+            }
 
-            nodes->freeBin(currentLink.link);
             path[i]->setChildrenRange(0x00, 0xff, TriePointer());
         } else {
             unsigned char leftmostCharWithCurrentLink = path[i]->checkLeftmostCharWithLink(key.data[i], currentLink);
