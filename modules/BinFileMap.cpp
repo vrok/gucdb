@@ -32,6 +32,9 @@ BinFileMap::~BinFileMap() {
 }
 
 void BinFileMap::loadMapCache() {
+    /* These nested loops iterate over bits in the map,
+     * each iteration check bit numbered ((i * 8) + j).
+     */
     for (off_t i = 0; i < mmaped_size; i++) {
         unsigned char *loc = (unsigned char*) getOffsetLoc(i);
         for (int j = 0; j < 8; j++) {
@@ -49,7 +52,6 @@ unsigned long BinFileMap::fetchEmptyBin() {
         cerr << "fetchEmptyBin: out of bins, expanding" << endl;
 
         size_t currentMmapedSize = mmaped_size;
-        //size_t newMmapedSize = mmaped_size + SystemParams::initialIndexMapSize();
         size_t newMmapedSize = mmaped_size + BIN_FILE_MAP_EXPAND_SIZE;
         extendFileAndMmapingToSize(newMmapedSize);
 
@@ -61,6 +63,10 @@ unsigned long BinFileMap::fetchEmptyBin() {
 
     unsigned long result = emptyBins.front();
     emptyBins.pop();
+
+    /* We've got the number of the bit we want, but we still need to extract
+     * it from the memory.
+     */
     *getOffsetLoc(result / 8) |= (1 << (result % 8));
 
     cerr << this << ": new empty bin " << result << endl;
