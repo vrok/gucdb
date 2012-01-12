@@ -12,7 +12,7 @@ namespace Db {
 
 class DatabaseKey {
 public:
-    unsigned char data[256];
+    unsigned char data[512];
     int length;
 
     DatabaseKey();

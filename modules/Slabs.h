@@ -10,9 +10,71 @@
 
 namespace Db {
 
+#define __STDC_LIMIT_MACROS
+#include <cstdint>
+#include <cassert>
+
+#include <vector>
+using namespace std;
+
+#define SLAB_SIZE (1024 * 1024)
+
+#define SLAB_START_POWER 2
+/* SLAB_START_OBJECT_SIZE is equal to (2 ^ SLAB_START_POWER) */
+#define SLAB_START_OBJECT_SIZE 4
+
+#define SLAB_END_POWER 20
+/* SLAB_END_OBJECT_SIZE is equal to (2 ^ SLAB_END_POWER) */
+#define SLAB_END_OBJECT_SIZE (1024 * 1024)
+
+struct Slab;
+struct SlabInfo;
+
+class SlabsClass
+{
+    vector<unsigned long long> slabsFull;
+    vector<unsigned long long> slabsPartial;
+};
+
 class Slabs {
 public:
+
     Slabs();
+
+    BinFile<Slab> *slabs;
+    BinFile<SlabInfo> *slabsInfo;
+
+    SlabsClass slabsClasses[SLAB_END_POWER - SLAB_START_POWER + 1];
+
+    vector<unsigned long long> slabsFull;
+    vector<unsigned long long> slabsPartial;
+    vector<unsigned long long> slabsEmpty;
+
+    
+
+    Slabs(BinFile<Slab> *slabs, BinFile<SlabInfo> *slabsInfo);
+
+    void saveData(char *source, size_t size);
+
+    void readData();
+};
+
+struct Slab
+{
+    char data[SLAB_SIZE];
+};
+
+struct SlabInfo
+{
+    size_t slabObjectSize;
+
+    /* Theoretically, each Slab Class has distinct needs for its free objects map.
+     * But we want to store these maps in a BinFile, thus we need to put them in
+     * constant-sized objects. Size of such constant-sized objects has to be large
+     * enough to store information about the Slab Class which requires most space
+     * (it is the smallest supported Slab Class).
+     */
+    unsigned char slabObjectsMap[SLAB_SIZE / SLAB_START_OBJECT_SIZE];
 };
 
 } /* namespace Db */

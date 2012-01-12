@@ -18,7 +18,9 @@ using namespace std;
 
 namespace Db {
 
-BinFileMap::BinFileMap(const std::string &filename) {
+BinFileMap::BinFileMap(const std::string &filename)
+    : endIterator(BinFileIterator(*this))
+{
     //openMMapedFile(filename, SystemParams::initialIndexMapSize());
     openMMapedFile(filename, BIN_FILE_MAP_EXPAND_SIZE);
     cerr << "Opened index map, loading" << endl;
@@ -70,5 +72,44 @@ void BinFileMap::makeBinEmpty(unsigned long index) {
     *getOffsetLoc(index / 8) &= ~(1 << (index % 8));
     emptyBins.push(index);
 }
+
+BinFileMap::BinFileIterator::BinFileIterator(BinFileMap &parent)
+        : parent(parent), binId(0)
+{
+}
+
+BinFileMap::BinFileIterator& BinFileMap::BinFileIterator::operator++()
+{
+    ++binId;
+    return *this;
+}
+
+bool BinFileMap::BinFileIterator::operator==(const BinFileIterator &rhs)
+{
+    return binId == rhs.binId;
+}
+
+bool BinFileMap::BinFileIterator::operator!=(const BinFileIterator &rhs)
+{
+    return binId != rhs.binId;
+}
+
+std::pair<unsigned long, bool> BinFileMap::BinFileIterator::operator*()
+{
+    unsigned char *loc = (unsigned char*) parent.getOffsetLoc(binId / 8);
+    return std::pair<unsigned long, bool>(binId, (*loc & (1 << (binId % 8))) != 0);
+}
+
+BinFileMap::BinFileIterator BinFileMap::getIterator()
+{
+    return BinFileMap::BinFileIterator(*this);
+}
+
+BinFileMap::BinFileIterator& BinFileMap::end()
+{
+    endIterator.binId = mmaped_size * 8;
+    return endIterator;
+}
+
 
 } /* namespace Db */
