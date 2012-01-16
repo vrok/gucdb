@@ -46,6 +46,7 @@ class Slabs
 {
 private:
     void initialize();
+    static size_t computeObjectHeader(char dest[sizeof(uint32_t)], size_t sourceSize);
 
 public:
     BinFile<Slab> *slabs;

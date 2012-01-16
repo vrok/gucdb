@@ -20,7 +20,10 @@ Slabs::Slabs(BinFile<Slab> *slabs, BinFile<SlabInfo> *slabsInfo)
 
 void Slabs::initialize()
 {
+    /* Loads information about current slab allocation. */
+
     const BinFileMap &slabInfoMap = slabsInfo->getBinFileMap();
+
     for (BinFileMap::Iterator it = slabInfoMap.getIterator(); it != slabInfoMap.end(); ++it) {
         /* Check if it's a non-empty bin (slab). */
         if ((*it).second) {
@@ -41,6 +44,7 @@ void Slabs::initialize()
             }
 
             if (newSlab->second.empty()) {
+                /* No empty places within this slab were found => this slab is full. */
                 slabClasses[getClassId(slabInfo->slabObjectSize)].slabsPartial.push_back(newSlab);
             } else {
                 slabClasses[getClassId(slabInfo->slabObjectSize)].slabsFull.push_back(newSlab);
@@ -59,32 +63,51 @@ int Slabs::getClassId(size_t objectSize)
         size *= 2;
     }
 
-    /* Class ID is the index within an array, not the logarithm itself. */
+    /* Class ID is an index of the slab classes array, not the logarithm itself. */
     return logarithm - SLAB_START_POWER;
+}
+
+size_t Slabs::computeObjectHeader(char dest[sizeof(uint32_t)], size_t sourceSize)
+{
+    /* At the beginning of each stored object, we have its size.
+     * We deduce the smallest integer type required to store objects' sizes within a slab.
+     */
+
+    if (sourceSize <= UINT8_MAX)
+    {
+        *((uint8_t*) &dest) = (uint8_t) sourceSize;
+        return sizeof(uint8_t);
+    } else
+    if (sourceSize <= UINT16_MAX)
+    {
+        *((uint16_t*) &dest) = (uint16_t) sourceSize;
+        return sizeof(uint16_t);
+    } else
+    if (sourceSize <= UINT32_MAX)
+    {
+        *((uint32_t*) &dest) = (uint32_t) sourceSize;
+        return sizeof(uint32_t);
+    } else
+    {
+        assert(false);
+    }
 }
 
 void Slabs::saveData(char *source, size_t size)
 {
-    size_t extraSpaceForSize = 0;
     char extraDataWithSize[sizeof(uint32_t)];
+    size_t extraSizeForHeader = computeObjectHeader(extraDataWithSize, size);
 
-    if (size <= UINT8_MAX)
-    {
-        extraSpaceForSize = sizeof(uint8_t);
-        *((uint8_t*) &extraDataWithSize) = (uint8_t) size;
-    } else
-    if (size <= UINT16_MAX)
-    {
-        extraSpaceForSize = sizeof(uint16_t);
-        *((uint16_t*) &extraDataWithSize) = (uint16_t) size;
-    } else
-    if (size <= UINT32_MAX)
-    {
-        extraSpaceForSize = sizeof(uint32_t);
-        *((uint32_t*) &extraDataWithSize) = (uint32_t) size;
-    } else
-    {
-        assert(false);
+    SlabsClass &slabsClass = slabClasses[getClassId(size + extraSizeForHeader)];
+
+    if (slabsClass.slabsPartial.empty()) {
+        unsigned long long newSlabId = slabs->getNewBinByID();
+        unsigned long long newSlabInfoId = slabsInfo->getNewBinByID();
+
+        assert(newSlabId == newSlabInfoId);
+
+        Slab *newSlab = slabs->getBin(newSlabId);
+        SlabInfo *newSlabInfo = slabsInfo->getBin(newSlabInfoId);
     }
 }
 
