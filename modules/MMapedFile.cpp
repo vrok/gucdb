@@ -65,8 +65,8 @@ bool MMapedFile::extendFileAndMmapingToSize(size_t newSize) {
     //cout << "RE MMAPED FILE " << this << " : " << newSize << " " << mmapStart << endl;
 }
 
-char* MMapedFile::getOffsetLoc(off_t offset) {
-    map<off_t, char*>::iterator desiredMmaping = --fileMmaps.upper_bound(offset);
+char* MMapedFile::getOffsetLoc(off_t offset) const {
+    map<off_t, char*>::const_iterator desiredMmaping = --fileMmaps.upper_bound(offset);
 
     /* Calculate offset within the found mmaping. */
     off_t singleMmapingOffset = offset - desiredMmaping->first;
@@ -107,7 +107,7 @@ MMapedFile::OpeningResult MMapedFile::openMMapedFile(const std::string &filename
     return OPENED;
 }
 
-string MMapedFile::mmapErrnoToStr(int errnoNum) {
+string MMapedFile::mmapErrnoToStr(int errnoNum) const {
     switch(errno) {
         case EACCES: return "EACCES";
         case EAGAIN: return "EAGAIN";

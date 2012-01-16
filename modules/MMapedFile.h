@@ -30,13 +30,13 @@ public:
 
     OpeningResult openMMapedFile(const std::string &filename, size_t minimalInitialSize);
 
-    char* getOffsetLoc(off_t offset);
+    char* getOffsetLoc(off_t offset) const;
 
     void extendFileToSize(size_t newSize);
 
     bool extendFileAndMmapingToSize(size_t newSize);
 
-    std::string mmapErrnoToStr(int errnoNum);
+    std::string mmapErrnoToStr(int errnoNum) const;
 
     void closeMMapedFile();
 };

@@ -20,25 +20,25 @@ namespace Db {
 
 class BinFileMap : public MMapedFile {
 public:
-    class BinFileIterator : public std::iterator<std::forward_iterator_tag, std::pair<unsigned long, bool> >
+    class Iterator : public std::iterator<std::forward_iterator_tag, std::pair<unsigned long, bool> >
     {
     private:
         friend class BinFileMap;
-        BinFileMap &parent;
+        const BinFileMap &parent;
 
         unsigned int binId;
-        BinFileIterator(BinFileMap &parent);
+        Iterator(const BinFileMap &parent);
     public:
-        BinFileIterator& operator++();
-        bool operator==(const BinFileIterator &rhs);
-        bool operator!=(const BinFileIterator &rhs);
+        Iterator& operator++();
+        bool operator==(const Iterator &rhs);
+        bool operator!=(const Iterator &rhs);
         std::pair<unsigned long, bool> operator*();
     };
 
 protected:
     std::queue<unsigned long> emptyBins;
     void loadMapCache();
-    BinFileIterator endIterator;
+    mutable Iterator endIterator;
 
 public:
     BinFileMap(const std::string &filename);
@@ -47,8 +47,8 @@ public:
     unsigned long fetchEmptyBin();
     void makeBinEmpty(unsigned long index);
 
-    BinFileIterator getIterator();
-    BinFileIterator& end();
+    Iterator getIterator() const;
+    Iterator& end() const;
 };
 
 } /* namespace Db */

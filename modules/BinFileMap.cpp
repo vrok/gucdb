@@ -19,7 +19,7 @@ using namespace std;
 namespace Db {
 
 BinFileMap::BinFileMap(const std::string &filename)
-    : endIterator(BinFileIterator(*this))
+    : endIterator(Iterator(*this))
 {
     //openMMapedFile(filename, SystemParams::initialIndexMapSize());
     openMMapedFile(filename, BIN_FILE_MAP_EXPAND_SIZE);
@@ -79,39 +79,39 @@ void BinFileMap::makeBinEmpty(unsigned long index) {
     emptyBins.push(index);
 }
 
-BinFileMap::BinFileIterator::BinFileIterator(BinFileMap &parent)
+BinFileMap::Iterator::Iterator(const BinFileMap &parent)
         : parent(parent), binId(0)
 {
 }
 
-BinFileMap::BinFileIterator& BinFileMap::BinFileIterator::operator++()
+BinFileMap::Iterator& BinFileMap::Iterator::operator++()
 {
     ++binId;
     return *this;
 }
 
-bool BinFileMap::BinFileIterator::operator==(const BinFileIterator &rhs)
+bool BinFileMap::Iterator::operator==(const Iterator &rhs)
 {
     return binId == rhs.binId;
 }
 
-bool BinFileMap::BinFileIterator::operator!=(const BinFileIterator &rhs)
+bool BinFileMap::Iterator::operator!=(const Iterator &rhs)
 {
     return binId != rhs.binId;
 }
 
-std::pair<unsigned long, bool> BinFileMap::BinFileIterator::operator*()
+std::pair<unsigned long, bool> BinFileMap::Iterator::operator*()
 {
     unsigned char *loc = (unsigned char*) parent.getOffsetLoc(binId / 8);
     return std::pair<unsigned long, bool>(binId, (*loc & (1 << (binId % 8))) != 0);
 }
 
-BinFileMap::BinFileIterator BinFileMap::getIterator()
+BinFileMap::Iterator BinFileMap::getIterator() const
 {
-    return BinFileMap::BinFileIterator(*this);
+    return BinFileMap::Iterator(*this);
 }
 
-BinFileMap::BinFileIterator& BinFileMap::end()
+BinFileMap::Iterator& BinFileMap::end() const
 {
     endIterator.binId = mmaped_size * 8;
     return endIterator;

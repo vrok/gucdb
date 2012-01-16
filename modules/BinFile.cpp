@@ -25,7 +25,7 @@ namespace Db {
 
 template<typename BinType>
 BinFile<BinType>::BinFile(const string &filename, BinFileMap *trieMap, unsigned long initialFileSize)
-: filename(filename), initialFileSize(initialFileSize), trieMap(trieMap) {
+: filename(filename), initialFileSize(initialFileSize), binFileMap(trieMap) {
 
 }
 
@@ -65,7 +65,7 @@ BinType *BinFile<BinType>::getBin(unsigned long id) {
 
 template<typename BinType>
 unsigned long long BinFile<BinType>::getNewBinByID() {
-    unsigned long newBinId = trieMap->fetchEmptyBin();
+    unsigned long newBinId = binFileMap->fetchEmptyBin();
 
     off_t binOffset = getBinOffset(newBinId);
     assureNewBinIsUsable(binOffset);
@@ -79,7 +79,7 @@ unsigned long long BinFile<BinType>::getNewBinByID() {
 
 template<typename BinType>
 void BinFile<BinType>::freeBin(unsigned long int id) {
-    trieMap->makeBinEmpty(id);
+    binFileMap->makeBinEmpty(id);
 }
 
 /* TODO: code below could be easily computed during compilation in c++11 */
@@ -96,6 +96,11 @@ unsigned long BinFile<BinType>::minimalIndexExpandSize() {
     } else {
         return pSize;
     }
+}
+
+template<typename BinType>
+const BinFileMap & BinFile<BinType>::getBinFileMap() {
+    return *binFileMap;
 }
 
 template class BinFile<TrieNode<ValueAddress> >;

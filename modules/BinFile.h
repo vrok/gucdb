@@ -23,11 +23,11 @@ private:
 
     off_t getBinOffset(unsigned long id);
 
+    BinFileMap *binFileMap;
+
 public: /* TODO: change to protected */
     unsigned long initialFileSize;
     string filename;
-
-    BinFileMap *trieMap;
 
     OpeningResult openMMapedFile();
 
@@ -38,6 +38,8 @@ public: /* TODO: change to protected */
     void freeBin(unsigned long id);
 
     static unsigned long minimalIndexExpandSize();
+
+    const BinFileMap & getBinFileMap();
 
 public:
     BinFile(const string &filename, BinFileMap *trieMap, unsigned long initialFileSize);

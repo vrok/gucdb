@@ -8,14 +8,18 @@
 #ifndef SLABS_H_
 #define SLABS_H_
 
-namespace Db {
-
 #define __STDC_LIMIT_MACROS
-#include <cstdint>
-#include <cassert>
+#include <stdint.h>
 
+//#include <cstdint>
+#include <cassert>
+#include <utility>
 #include <vector>
 using namespace std;
+
+#include "BinFile.h"
+
+namespace Db {
 
 #define SLAB_SIZE (1024 * 1024)
 
@@ -30,32 +34,29 @@ using namespace std;
 struct Slab;
 struct SlabInfo;
 
-class SlabsClass
+typedef pair<unsigned long long, vector<unsigned long> > SlabIdAndFreeObjectsList;
+
+struct SlabsClass
 {
-    vector<unsigned long long> slabsFull;
-    vector<unsigned long long> slabsPartial;
+    vector<SlabIdAndFreeObjectsList*> slabsFull;
+    vector<SlabIdAndFreeObjectsList*> slabsPartial;
 };
 
-class Slabs {
+class Slabs
+{
+private:
+    void initialize();
+
 public:
-
-    Slabs();
-
     BinFile<Slab> *slabs;
     BinFile<SlabInfo> *slabsInfo;
+    SlabsClass slabClasses[SLAB_END_POWER - SLAB_START_POWER + 1];
 
-    SlabsClass slabsClasses[SLAB_END_POWER - SLAB_START_POWER + 1];
-
-    vector<unsigned long long> slabsFull;
-    vector<unsigned long long> slabsPartial;
-    vector<unsigned long long> slabsEmpty;
-
-    
+    static int getClassId(size_t objectSize);
 
     Slabs(BinFile<Slab> *slabs, BinFile<SlabInfo> *slabsInfo);
 
     void saveData(char *source, size_t size);
-
     void readData();
 };
 
