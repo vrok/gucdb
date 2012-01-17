@@ -7,6 +7,9 @@
 
 #include "Slabs.h"
 
+#include <cmath>
+#include <cstring>
+
 namespace Db {
 
 #define SLAB_START_POWER 2
@@ -45,15 +48,15 @@ void Slabs::initialize()
 
             if (newSlab->second.empty()) {
                 /* No empty places within this slab were found => this slab is full. */
-                slabClasses[getClassId(slabInfo->slabObjectSize)].slabsPartial.push_back(newSlab);
+                slabClasses[getSuitableClass(slabInfo->slabObjectSize)].slabsPartial.push_back(newSlab);
             } else {
-                slabClasses[getClassId(slabInfo->slabObjectSize)].slabsFull.push_back(newSlab);
+                slabClasses[getSuitableClass(slabInfo->slabObjectSize)].slabsFull.push_back(newSlab);
             }
         }
     }
 }
 
-int Slabs::getClassId(size_t objectSize)
+int Slabs::getSuitableClass(size_t objectSize)
 {
     size_t size = SLAB_START_OBJECT_SIZE;
     int logarithm = SLAB_START_POWER;
@@ -65,6 +68,11 @@ int Slabs::getClassId(size_t objectSize)
 
     /* Class ID is an index of the slab classes array, not the logarithm itself. */
     return logarithm - SLAB_START_POWER;
+}
+
+size_t Slabs::getSizeOfClass(int classId)
+{
+	return pow(2ul, classId + SLAB_START_POWER);
 }
 
 size_t Slabs::computeObjectHeader(char dest[sizeof(uint32_t)], size_t sourceSize)
@@ -93,22 +101,74 @@ size_t Slabs::computeObjectHeader(char dest[sizeof(uint32_t)], size_t sourceSize
     }
 }
 
-void Slabs::saveData(char *source, size_t size)
+unsigned long long Slabs::createNewSlab(int classId)
 {
-    char extraDataWithSize[sizeof(uint32_t)];
-    size_t extraSizeForHeader = computeObjectHeader(extraDataWithSize, size);
+	SlabsClass &slabsClass = slabClasses[classId];
 
-    SlabsClass &slabsClass = slabClasses[getClassId(size + extraSizeForHeader)];
+	unsigned long long newSlabId = slabs->getNewBinByID();
+	unsigned long long newSlabInfoId = slabsInfo->getNewBinByID();
 
-    if (slabsClass.slabsPartial.empty()) {
-        unsigned long long newSlabId = slabs->getNewBinByID();
-        unsigned long long newSlabInfoId = slabsInfo->getNewBinByID();
+	assert(newSlabId == newSlabInfoId);
 
-        assert(newSlabId == newSlabInfoId);
+	Slab *newSlab = slabs->getBin(newSlabId);
+	SlabInfo *newSlabInfo = slabsInfo->getBin(newSlabInfoId);
 
-        Slab *newSlab = slabs->getBin(newSlabId);
-        SlabInfo *newSlabInfo = slabsInfo->getBin(newSlabInfoId);
+	newSlabInfo->slabObjectSize = getSizeOfClass(classId);
+
+	unsigned long maxNumOfObjectsInSlab = SLAB_SIZE / getSizeOfClass(classId);
+
+	SlabIdAndFreeObjectsList *slabPair = new SlabIdAndFreeObjectsList;
+	slabPair->first = newSlabId;
+	slabPair->second.reserve(maxNumOfObjectsInSlab);
+
+	for (unsigned long slabInnerID = 0; slabInnerID < maxNumOfObjectsInSlab; slabInnerID++) {
+	    slabPair->second.push_back(slabInnerID);
+	}
+
+	slabsClass.slabsPartial.push_back(slabPair);
+
+	return newSlabId;
+}
+
+char* Slabs::getLocationInSlabByInnerID(Slab &slab, SlabInfo &slabInfo, unsigned long slabInnerID)
+{
+    return slab.data + (slabInfo.slabObjectSize * slabInnerID);
+}
+
+ObjectID Slabs::saveData(char *source, size_t size)
+{
+    char extraDataContainingObjectSize[sizeof(uint32_t)];
+    size_t sizeOfExtraData = computeObjectHeader(extraDataContainingObjectSize, size);
+	size_t spaceRequiredForNewData = size + sizeOfExtraData;
+
+	int classId = getSuitableClass(spaceRequiredForNewData);
+
+    SlabsClass &slabClass = slabClasses[classId];
+
+    if (slabClass.slabsPartial.empty()) {
+        createNewSlab(classId);
     }
+
+    SlabIdAndFreeObjectsList *slabPair = slabClass.slabsPartial.back();
+    unsigned long long slabID = slabPair->first;
+    unsigned long innerSlabID = slabPair->second.back();
+    slabPair->second.pop_back();
+
+    if (slabPair->second.empty()) {
+        /* Slab is full, move it from vector with partially filled slabs. */
+        slabClass.slabsPartial.pop_back();
+        slabClass.slabsFull.push_back(slabPair);
+    }
+
+    Slab *targetSlab = slabs->getBin(slabID);
+    SlabInfo *targetSlabInfo = slabsInfo->getBin(slabID);
+
+    char *targetLocation = getLocationInSlabByInnerID(*targetSlab, *targetSlabInfo, innerSlabID);
+
+    memcpy(targetLocation, extraDataContainingObjectSize, sizeOfExtraData);
+    memcpy(targetLocation + sizeOfExtraData, source, size);
+
+    return ObjectID(slabID, innerSlabID);
 }
 
 void Slabs::readData()

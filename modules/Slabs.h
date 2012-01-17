@@ -34,7 +34,19 @@ namespace Db {
 struct Slab;
 struct SlabInfo;
 
+
+struct ObjectID
+{
+    ObjectID(unsigned long long slabID, unsigned long slabInnerID)
+        : slabID(slabID), slabInnerID(slabInnerID) {}
+
+    /* We'd like to sizeof(ObjectID) == 64 */
+    unsigned long long slabID : 44;
+    unsigned long slabInnerID : 20;
+};
+
 typedef pair<unsigned long long, vector<unsigned long> > SlabIdAndFreeObjectsList;
+
 
 struct SlabsClass
 {
@@ -47,17 +59,20 @@ class Slabs
 private:
     void initialize();
     static size_t computeObjectHeader(char dest[sizeof(uint32_t)], size_t sourceSize);
+	unsigned long long createNewSlab(int classId);
+	char *getLocationInSlabByInnerID(Slab &slab, SlabInfo &slabInfo, unsigned long slabInnerID);
 
 public:
     BinFile<Slab> *slabs;
     BinFile<SlabInfo> *slabsInfo;
     SlabsClass slabClasses[SLAB_END_POWER - SLAB_START_POWER + 1];
 
-    static int getClassId(size_t objectSize);
+    static int getSuitableClass(size_t objectSize);
+	static size_t getSizeOfClass(int classId);
 
     Slabs(BinFile<Slab> *slabs, BinFile<SlabInfo> *slabsInfo);
 
-    void saveData(char *source, size_t size);
+    ObjectID saveData(char *source, size_t size);
     void readData();
 };
 
