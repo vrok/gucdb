@@ -5,6 +5,7 @@ using namespace std;
 #include "modules/Trie.h"
 #include "modules/Database.h"
 
+#if 0
 int main(int argc, char *argv[])
 {
     string cmd, key;
@@ -44,3 +45,5 @@ int main(int argc, char *argv[])
     }
 	return 0;
 }
+#endif
+

@@ -12,6 +12,7 @@
 #include <cstring>
 using namespace std;
 
+#include "Slabs.h"
 #include "Trie.h"
 #include "Database.h"
 #include "SystemParams.h"
@@ -105,5 +106,7 @@ const BinFileMap & BinFile<BinType>::getBinFileMap() {
 
 template class BinFile<TrieNode<ValueAddress> >;
 template class BinFile<TrieLeaf<ValueAddress> >;
+template class BinFile<SlabInfo>;
+template class BinFile<Slab>;
 
 } /* namespace Db */

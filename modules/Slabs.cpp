@@ -7,6 +7,9 @@
 
 #include "Slabs.h"
 
+#include <iostream>
+using namespace std;
+
 #include <cmath>
 #include <cstring>
 
@@ -127,6 +130,8 @@ unsigned long long Slabs::createNewSlab(int classId)
 
 	slabsClass.slabsPartial.push_back(slabPair);
 
+	cout << "Created new slab " << newSlabId << endl;
+
 	return newSlabId;
 }
 
@@ -163,6 +168,8 @@ ObjectID Slabs::saveData(char *source, size_t size)
     Slab *targetSlab = slabs->getBin(slabID);
     SlabInfo *targetSlabInfo = slabsInfo->getBin(slabID);
 
+    cout << "Selected slab  " << slabID << ", innerSlabID: " << innerSlabID << "   slabClass: " << classId << endl;
+
     char *targetLocation = getLocationInSlabByInnerID(*targetSlab, *targetSlabInfo, innerSlabID);
 
     memcpy(targetLocation, extraDataContainingObjectSize, sizeOfExtraData);
@@ -192,3 +199,37 @@ void Slabs::readData()
 }
 
 } /* namespace Db */
+
+
+
+using namespace Db;
+
+int main()
+{
+#if 0
+    mainIndex = new Trie<ValueAddress>(new BinFile<TrieNode<ValueAddress> >(dbDirectory + "/main.nodes",
+                                               new BinFileMap(dbDirectory + "/main.nodes.map"),
+                                               BinFile<TrieNode<ValueAddress> >::minimalIndexExpandSize() * 32),
+                                       new BinFile<TrieLeaf<ValueAddress> >(dbDirectory + "/main.leaves",
+                                               new BinFileMap(dbDirectory + "/main.leaves.map"),
+                                               BinFile<TrieLeaf<ValueAddress> >::minimalIndexExpandSize() * 1));
+#endif
+
+    Slabs *slabs = new Slabs(new BinFile<Slab>("/tmp/main.slabs", new BinFileMap("/tmp/main.slabs.map"), BinFile<Slab>::minimalIndexExpandSize()),
+                             new BinFile<SlabInfo>("/tmp/main.slabinfos", new BinFileMap("/tmp/main.slabinfos.map"), BinFile<Slab>::minimalIndexExpandSize()));
+
+    slabs->slabs->openMMapedFile();
+    slabs->slabsInfo->openMMapedFile();
+
+    char *test = "trelemorele raz dwa trzy cztery piec szesc siedem";
+
+    for (int i = 0; i < 60000; i++) {
+        slabs->saveData(test, strlen(test) - 1);
+        cout << "aa" << endl;
+    }
+
+
+
+    return 0;
+}
+

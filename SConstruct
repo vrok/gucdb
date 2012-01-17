@@ -10,6 +10,7 @@ BinFileMap.cpp
 BinFile.cpp
 TriePointer.cpp
 DatabaseKey.cpp
+Slabs.cpp
 """)
 
 TEST_DIR = 'test'
