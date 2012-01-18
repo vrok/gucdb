@@ -40,6 +40,17 @@ struct ObjectID
     ObjectID(unsigned long long slabID, unsigned long slabInnerID)
         : slabID(slabID), slabInnerID(slabInnerID) {}
 
+
+    ObjectID() {}
+
+    //ObjectID(uint64_t intRepr) : slabID(intRepr >> 20), slabInnerID(intRepr & )
+
+    operator uint64_t()
+    {
+        /* 20 is roughly sizeof(slabInnerID) (using sizeof operator doesn't work for bitfields) */
+        return (slabID << 20) | slabInnerID;
+    }
+
     /* We'd like to sizeof(ObjectID) == 64 */
     unsigned long long slabID : 44;
     unsigned long slabInnerID : 20;
@@ -57,8 +68,10 @@ struct SlabsClass
 class Slabs
 {
 private:
-    void initialize();
+
     static size_t computeObjectHeader(char dest[sizeof(uint32_t)], size_t sourceSize);
+    size_t readObjectSizeAndPointToData(char *&source, size_t classSize);
+
 	unsigned long long createNewSlab(int classId);
 	char *getLocationInSlabByInnerID(Slab &slab, SlabInfo &slabInfo, unsigned long slabInnerID);
 
@@ -67,13 +80,15 @@ public:
     BinFile<SlabInfo> *slabsInfo;
     SlabsClass slabClasses[SLAB_END_POWER - SLAB_START_POWER + 1];
 
+    void initialize();
+
     static int getSuitableClass(size_t objectSize);
 	static size_t getSizeOfClass(int classId);
 
     Slabs(BinFile<Slab> *slabs, BinFile<SlabInfo> *slabsInfo);
 
-    ObjectID saveData(char *source, size_t size);
-    void readData();
+    ObjectID saveData(const char *source, size_t size);
+    size_t readData(char *&source, ObjectID objectID);
 };
 
 struct Slab

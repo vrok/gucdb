@@ -4,7 +4,6 @@
 	<comment></comment>
 	<projects>
 		<project>cygwin_includes</project>
-		<project>libs</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

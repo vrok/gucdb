@@ -102,7 +102,7 @@ bool BinFileMap::Iterator::operator!=(const Iterator &rhs)
 
 std::pair<unsigned long, bool> BinFileMap::Iterator::operator*()
 {
-    unsigned char *loc = (unsigned char*) parent.getOffsetLoc(binId / 8);
+    char *loc = parent.getOffsetLoc(binId / 8);
     return std::pair<unsigned long, bool>(binId, (*loc & (1 << (binId % 8))) != 0);
 }
 

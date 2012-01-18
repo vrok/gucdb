@@ -8,6 +8,8 @@
 #include "Slabs.h"
 
 #include <iostream>
+#include <string>
+#include <sstream>
 using namespace std;
 
 #include <cmath>
@@ -51,9 +53,9 @@ void Slabs::initialize()
 
             if (newSlab->second.empty()) {
                 /* No empty places within this slab were found => this slab is full. */
-                slabClasses[getSuitableClass(slabInfo->slabObjectSize)].slabsPartial.push_back(newSlab);
-            } else {
                 slabClasses[getSuitableClass(slabInfo->slabObjectSize)].slabsFull.push_back(newSlab);
+            } else {
+                slabClasses[getSuitableClass(slabInfo->slabObjectSize)].slabsPartial.push_back(newSlab);
             }
         }
     }
@@ -86,22 +88,48 @@ size_t Slabs::computeObjectHeader(char dest[sizeof(uint32_t)], size_t sourceSize
 
     if (sourceSize <= UINT8_MAX)
     {
-        *((uint8_t*) &dest) = (uint8_t) sourceSize;
+        *((uint8_t*) dest) = (uint8_t) sourceSize;
         return sizeof(uint8_t);
     } else
     if (sourceSize <= UINT16_MAX)
     {
-        *((uint16_t*) &dest) = (uint16_t) sourceSize;
+        *((uint16_t*) dest) = (uint16_t) sourceSize;
         return sizeof(uint16_t);
     } else
     if (sourceSize <= UINT32_MAX)
     {
-        *((uint32_t*) &dest) = (uint32_t) sourceSize;
+        *((uint32_t*) dest) = (uint32_t) sourceSize;
         return sizeof(uint32_t);
     } else
     {
         assert(false);
     }
+}
+
+size_t Slabs::readObjectSizeAndPointToData(char* &source, size_t classSize)
+{
+    size_t objectSize = 0;
+
+    if ((classSize - sizeof(uint8_t)) <= UINT8_MAX)
+    {
+        objectSize = (size_t) *((uint8_t*) source);
+        source += sizeof(uint8_t);
+    } else
+    if ((classSize - sizeof(uint16_t)) <= UINT16_MAX)
+    {
+        objectSize = (size_t) *((uint16_t*) source);
+        source += sizeof(uint16_t);
+    } else
+    if ((classSize - sizeof(uint32_t)) <= UINT32_MAX)
+    {
+        objectSize = (size_t) *((uint32_t*) source);
+        source += sizeof(uint32_t);
+    } else
+    {
+        assert(false);
+    }
+
+    return objectSize;
 }
 
 unsigned long long Slabs::createNewSlab(int classId)
@@ -140,10 +168,11 @@ char* Slabs::getLocationInSlabByInnerID(Slab &slab, SlabInfo &slabInfo, unsigned
     return slab.data + (slabInfo.slabObjectSize * slabInnerID);
 }
 
-ObjectID Slabs::saveData(char *source, size_t size)
+ObjectID Slabs::saveData(const char *source, size_t size)
 {
     char extraDataContainingObjectSize[sizeof(uint32_t)];
     size_t sizeOfExtraData = computeObjectHeader(extraDataContainingObjectSize, size);
+
 	size_t spaceRequiredForNewData = size + sizeOfExtraData;
 
 	int classId = getSuitableClass(spaceRequiredForNewData);
@@ -168,8 +197,6 @@ ObjectID Slabs::saveData(char *source, size_t size)
     Slab *targetSlab = slabs->getBin(slabID);
     SlabInfo *targetSlabInfo = slabsInfo->getBin(slabID);
 
-    cout << "Selected slab  " << slabID << ", innerSlabID: " << innerSlabID << "   slabClass: " << classId << endl;
-
     char *targetLocation = getLocationInSlabByInnerID(*targetSlab, *targetSlabInfo, innerSlabID);
 
     memcpy(targetLocation, extraDataContainingObjectSize, sizeOfExtraData);
@@ -178,24 +205,17 @@ ObjectID Slabs::saveData(char *source, size_t size)
     return ObjectID(slabID, innerSlabID);
 }
 
-void Slabs::readData()
+size_t Slabs::readData(char *&source, ObjectID objectID)
 {
-    size_t slabObjectSize = 0;
-    if ((slabObjectSize - sizeof(uint8_t)) <= UINT8_MAX)
-    {
+    Slab *sourceSlab = slabs->getBin(objectID.slabID);
+    SlabInfo *sourceSlabInfo = slabsInfo->getBin(objectID.slabID);
 
-    } else
-    if ((slabObjectSize - sizeof(uint16_t)) <= UINT16_MAX)
-    {
+    char *rawData = sourceSlab->data + (sourceSlabInfo->slabObjectSize * objectID.slabInnerID);
 
-    } else
-    if ((slabObjectSize - sizeof(uint32_t)) <= UINT32_MAX)
-    {
+    size_t dataSize = readObjectSizeAndPointToData(rawData, sourceSlabInfo->slabObjectSize);
 
-    } else
-    {
-        assert(false);
-    }
+    source = rawData;
+    return dataSize;
 }
 
 } /* namespace Db */
@@ -221,11 +241,44 @@ int main()
     slabs->slabs->openMMapedFile();
     slabs->slabsInfo->openMMapedFile();
 
-    char *test = "trelemorele raz dwa trzy cztery piec szesc siedem";
+    slabs->initialize();
 
-    for (int i = 0; i < 60000; i++) {
-        slabs->saveData(test, strlen(test) - 1);
-        cout << "aa" << endl;
+    for (int i = 0; i < 100000; i++) {
+        stringstream st;
+        st << i;
+
+        string test;
+        st >> test;
+
+        test += " trelemorele raz dwa trzy cztery piec szesc siedem";
+
+        ObjectID oid = slabs->saveData(test.c_str(), test.length());
+        cout << test << "put with slab id: " << oid.slabID << "   inner id: " << oid.slabInnerID << endl;
+
+        //cout << "aa" << endl;
+    }
+
+    while (true) {
+        cout << "> ";
+
+        ObjectID oid;
+        long long unsigned tmpSlabID;
+        long unsigned tmpSlabInnerID;
+        cin >> tmpSlabID;
+        cin >> tmpSlabInnerID;
+
+        oid.slabID = tmpSlabID;
+        oid.slabInnerID = tmpSlabInnerID;
+
+        char *result = 0;
+        size_t resultSize = slabs->readData(result, oid);
+
+        for (int i = 0; i < resultSize; i++) {
+            cout << result[i];
+        }
+
+        cout << endl;
+
     }
 
 
