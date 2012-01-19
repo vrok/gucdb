@@ -43,7 +43,8 @@ struct ObjectID
 
     ObjectID() {}
 
-    //ObjectID(uint64_t intRepr) : slabID(intRepr >> 20), slabInnerID(intRepr & )
+    ObjectID(uint64_t intRepr)
+        : slabID(intRepr >> 20), slabInnerID((intRepr << 44) >> 44) {}
 
     operator uint64_t()
     {

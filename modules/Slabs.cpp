@@ -158,7 +158,7 @@ unsigned long long Slabs::createNewSlab(int classId)
 
 	slabsClass.slabsPartial.push_back(slabPair);
 
-	cout << "Created new slab " << newSlabId << endl;
+	cerr << "Created new slab " << newSlabId << endl;
 
 	return newSlabId;
 }
@@ -221,68 +221,63 @@ size_t Slabs::readData(char *&source, ObjectID objectID)
 } /* namespace Db */
 
 
+#define TEST_SLABS
+#ifdef TEST_SLABS
 
 using namespace Db;
 
 int main()
 {
-#if 0
-    mainIndex = new Trie<ValueAddress>(new BinFile<TrieNode<ValueAddress> >(dbDirectory + "/main.nodes",
-                                               new BinFileMap(dbDirectory + "/main.nodes.map"),
-                                               BinFile<TrieNode<ValueAddress> >::minimalIndexExpandSize() * 32),
-                                       new BinFile<TrieLeaf<ValueAddress> >(dbDirectory + "/main.leaves",
-                                               new BinFileMap(dbDirectory + "/main.leaves.map"),
-                                               BinFile<TrieLeaf<ValueAddress> >::minimalIndexExpandSize() * 1));
-#endif
-
-    Slabs *slabs = new Slabs(new BinFile<Slab>("/tmp/main.slabs", new BinFileMap("/tmp/main.slabs.map"), BinFile<Slab>::minimalIndexExpandSize()),
-                             new BinFile<SlabInfo>("/tmp/main.slabinfos", new BinFileMap("/tmp/main.slabinfos.map"), BinFile<Slab>::minimalIndexExpandSize()));
+    Slabs *slabs = new Slabs(new BinFile<Slab>("/tmp/main.slabs",
+                                               new BinFileMap("/tmp/main.slabs.map"),
+                                               BinFile<Slab>::minimalIndexExpandSize()),
+                             new BinFile<SlabInfo>("/tmp/main.slabinfos",
+                                                   new BinFileMap("/tmp/main.slabinfos.map"),
+                                                   BinFile<Slab>::minimalIndexExpandSize()));
 
     slabs->slabs->openMMapedFile();
     slabs->slabsInfo->openMMapedFile();
 
     slabs->initialize();
 
-    for (int i = 0; i < 100000; i++) {
-        stringstream st;
-        st << i;
-
-        string test;
-        st >> test;
-
-        test += " trelemorele raz dwa trzy cztery piec szesc siedem";
-
-        ObjectID oid = slabs->saveData(test.c_str(), test.length());
-        cout << test << "put with slab id: " << oid.slabID << "   inner id: " << oid.slabInnerID << endl;
-
-        //cout << "aa" << endl;
-    }
-
     while (true) {
-        cout << "> ";
+        cerr << "> ";
 
-        ObjectID oid;
-        long long unsigned tmpSlabID;
-        long unsigned tmpSlabInnerID;
-        cin >> tmpSlabID;
-        cin >> tmpSlabInnerID;
+        string command;
 
-        oid.slabID = tmpSlabID;
-        oid.slabInnerID = tmpSlabInnerID;
+        cin >> command;
 
-        char *result = 0;
-        size_t resultSize = slabs->readData(result, oid);
+        if (command == "write") {
+            string value;
+            cin >> value;
 
-        for (int i = 0; i < resultSize; i++) {
-            cout << result[i];
+            ObjectID oid = slabs->saveData(value.c_str(), value.length());
+
+            cout << (uint64_t) oid << endl;
+        } else
+        if (command == "read") {
+            uint64_t oidAsUInt;
+
+            cin >> oidAsUInt;
+
+            ObjectID oid(oidAsUInt);
+            char *result = 0;
+            size_t resultSize = slabs->readData(result, oid);
+
+            for (int i = 0; i < resultSize; i++) {
+                cout << result[i];
+            }
+
+            cout << endl;
+        } else
+        if (command == "exit") {
+            return 0;
+        } else {
+            cerr << "Unknown command";
         }
-
-        cout << endl;
-
     }
-
-
 
     return 0;
 }
 
+#endif

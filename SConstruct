@@ -15,13 +15,14 @@ Slabs.cpp
 
 TEST_DIR = 'test'
 GTEST_DIR = 'test/gtest-1.6.0/'
+GMOCK_DIR = 'test/gmock-1.6.0/'
 
 modules_full = ['modules/%s' % x for x in modules]
 
 env = Environment()
 env['CCFLAGS'] = '-ggdb'
 
-env.StaticLibrary(target='modules_lib', source = modules_full)
+env.StaticLibrary(target='modules_lib', source=modules_full)
 
 db_binary = env.Program(target='db', source=['main.cpp'], LIBS=['modules_lib'], LIBPATH='.')
 
@@ -49,7 +50,7 @@ for module in modules:
 
     env.Program(target=base_module_name + '_test',
                 source=[test_file_name],
-                CPPPATH=['modules', GTEST_DIR, GTEST_DIR + 'include'],
+                CPPPATH=['modules', GTEST_DIR, GTEST_DIR + 'include', GMOCK_DIR, GMOCK_DIR + 'include'],
                 LINKFLAGS=['-pthread'],
                 LIBS=['modules_lib', 'gtest_lib'], LIBPATH='.') 
 
