@@ -24,11 +24,6 @@ using namespace std;
 #include <errno.h>
 
 
-// TODO: CDT goes crazy without it, possibly remove it in future
-#ifndef size_t
-//#define size_t long unsigned int
-#endif
-
 namespace Db {
 
 void MMapedFile::extendFileToSize(size_t newSize) {
