@@ -48,7 +48,7 @@ bool MMapedFile::extendFileAndMmapingToSize(size_t newSize) {
 
     size_t newMmapingSize = newSize - mmaped_size;
 
-    cerr << "NEW MMAPING " << newMmapingSize << " " << newSize << endl;
+    //cerr << "NEW MMAPING " << newMmapingSize << " " << newSize << endl;
     assert((newMmapingSize % SystemParams::pageSize()) == 0);
 
     void *mmapStart = mmap(0, newMmapingSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, (off_t) mmaped_size);
@@ -62,7 +62,7 @@ bool MMapedFile::extendFileAndMmapingToSize(size_t newSize) {
     fileMmaps[mmaped_size] = (char*) mmapStart;
     mmaped_size = newSize;
 
-    //cout << "RE MMAPED FILE " << this << " : " << newSize << " " << mmapStart << endl;
+    cerr << "RE MMAPED FILE " << this << " : " << mmapStart << " - " << (void*)((char*)mmapStart + newMmapingSize) << endl;
 }
 
 char* MMapedFile::getOffsetLoc(off_t offset) const {

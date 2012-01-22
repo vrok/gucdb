@@ -26,8 +26,16 @@ namespace Db {
 
 template<typename BinType>
 BinFile<BinType>::BinFile(const string &filename, BinFileMap *trieMap, unsigned long initialFileSize)
-: filename(filename), initialFileSize(initialFileSize), binFileMap(trieMap) {
-
+    : filename(filename), initialFileSize(initialFileSize), binFileMap(trieMap)
+{
+    /* These asserts are for future developers, trying to store not nicely padded objects
+     * using this class (it would introduce intricate bugs).
+     */
+    if (sizeof(BinType) > SystemParams::pageSize()) {
+        assert(0 == (sizeof(BinType) % SystemParams::pageSize()));
+    } else {
+        assert(0 == (SystemParams::pageSize() % sizeof(BinType)));
+    }
 }
 
 template<typename BinType>
@@ -76,6 +84,25 @@ unsigned long long BinFile<BinType>::getNewBinByID() {
     memset(bin, 0, sizeof(BinType));
 
     return newBinId;
+}
+
+template<typename BinType>
+bool BinFile<BinType>::isBinFree(unsigned long id)
+{
+    return binFileMap->isBinEmpty(id);
+}
+
+template<typename BinType>
+bool BinFile<BinType>::isBinIDSafeAndAllocated(unsigned long id)
+{
+    /* We check:
+     * - If BinType object can be fit at given location
+     *   (it's not enough to be before the end of mmaped space,
+     *   sizeof(BinType) bytes still need to be left)
+     * - If it's actually used (not free).
+     */
+    return ((id + 1) * sizeof(BinType) <= mmaped_size)
+           && !isBinFree(id);
 }
 
 template<typename BinType>

@@ -4,8 +4,8 @@ import random
 import sys
 import os
 
-MAX_LEN = 1024
-TEST_LEN = 5
+MAX_LEN = 512
+TEST_LEN = 100000
 
 if len(sys.argv) != 3:
     print 'Usage test_slabs.py DB_BINARY TEMPORARY_DIR'
@@ -23,7 +23,7 @@ input_lines = []
 
 def print_and_run(command):
     print ' * Running "%s"' % command
-    os.system(command)
+    return os.system(command)
 
 print 'Generating input writes'
 
@@ -50,7 +50,9 @@ with open(temp_desired_result, 'w') as reference_file:
 
 print 'Running writes'
 
-print_and_run('%s < %s > %s 2>/dev/null' % (binary, temp_in1_file, temp_out1_file))
+res = print_and_run('%s < %s > %s 2>/dev/null' % (binary, temp_in1_file, temp_out1_file))
+if res != 0:
+    sys.exit(-1)
 
 print 'Reading results, generating reads'
 
@@ -72,9 +74,12 @@ with open(temp_in2_file, 'w') as generated_input_file:
 
 print 'Running reads'
 
-print_and_run('%s < %s > %s 2>/dev/null' % (binary, temp_in2_file, temp_out2_file))
+res = print_and_run('%s < %s > %s 2>/dev/null' % (binary, temp_in2_file, temp_out2_file))
+if res != 0:
+    sys.exit(-1)
+
 
 print 'Comparing'
 
-print_and_run('cmp %s %s' % (temp_desired_result, temp_out2_file))
+sys.exit(print_and_run('cmp %s %s' % (temp_desired_result, temp_out2_file)))
 

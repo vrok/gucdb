@@ -17,6 +17,7 @@
 #include <vector>
 using namespace std;
 
+#include "SystemParams.h"
 #include "BinFile.h"
 
 namespace Db {
@@ -69,7 +70,6 @@ struct SlabsClass
 class Slabs
 {
 private:
-
     static size_t computeObjectHeader(char dest[sizeof(uint32_t)], size_t sourceSize);
     size_t readObjectSizeAndPointToData(char *&source, size_t classSize);
 
@@ -90,6 +90,8 @@ public:
 
     ObjectID saveData(const char *source, size_t size);
     size_t readData(char *&source, ObjectID objectID);
+
+    void dumpSlabInfo(ostream &where, unsigned long long slabID);
 };
 
 struct Slab
@@ -108,6 +110,11 @@ struct SlabInfo
      * (it is the smallest supported Slab Class).
      */
     unsigned char slabObjectsMap[SLAB_SIZE / SLAB_START_OBJECT_SIZE];
+
+    /* Every type stored using BinFile has to be properly padded. See asserts
+     * in BinFile constructor for details.
+     */
+    char someDataJustToMakeStructNicelyPadded[TYPICAL_PAGE_SIZE - ((sizeof(size_t) + (SLAB_SIZE / SLAB_START_OBJECT_SIZE)) % TYPICAL_PAGE_SIZE)];
 };
 
 } /* namespace Db */

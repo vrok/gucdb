@@ -46,6 +46,7 @@ public:
 
     unsigned long fetchEmptyBin();
     void makeBinEmpty(unsigned long index);
+    bool isBinEmpty(unsigned long index);
 
     Iterator getIterator() const;
     Iterator& end() const;

@@ -74,9 +74,15 @@ unsigned long BinFileMap::fetchEmptyBin() {
     return result;
 }
 
-void BinFileMap::makeBinEmpty(unsigned long index) {
+void BinFileMap::makeBinEmpty(unsigned long index)
+{
     *getOffsetLoc(index / 8) &= ~(1 << (index % 8));
     emptyBins.push(index);
+}
+
+bool BinFileMap::isBinEmpty(unsigned long index)
+{
+    return 0 == getOffsetLoc(index / 8) & (1 << (index % 8));
 }
 
 BinFileMap::Iterator::Iterator(const BinFileMap &parent)

@@ -23,7 +23,10 @@ namespace Db {
 Slabs::Slabs(BinFile<Slab> *slabs, BinFile<SlabInfo> *slabsInfo)
         : slabs(slabs), slabsInfo(slabsInfo)
 {
+    slabs->openMMapedFile();
+    slabsInfo->openMMapedFile();
 
+    initialize();
 }
 
 void Slabs::initialize()
@@ -172,9 +175,7 @@ ObjectID Slabs::saveData(const char *source, size_t size)
 {
     char extraDataContainingObjectSize[sizeof(uint32_t)];
     size_t sizeOfExtraData = computeObjectHeader(extraDataContainingObjectSize, size);
-
 	size_t spaceRequiredForNewData = size + sizeOfExtraData;
-
 	int classId = getSuitableClass(spaceRequiredForNewData);
 
     SlabsClass &slabClass = slabClasses[classId];
@@ -207,6 +208,9 @@ ObjectID Slabs::saveData(const char *source, size_t size)
 
 size_t Slabs::readData(char *&source, ObjectID objectID)
 {
+    assert(slabs->isBinIDSafeAndAllocated(objectID.slabID));
+    assert(slabs->isBinIDSafeAndAllocated(objectID.slabID));
+
     Slab *sourceSlab = slabs->getBin(objectID.slabID);
     SlabInfo *sourceSlabInfo = slabsInfo->getBin(objectID.slabID);
 
@@ -216,6 +220,17 @@ size_t Slabs::readData(char *&source, ObjectID objectID)
 
     source = rawData;
     return dataSize;
+}
+
+void Slabs::dumpSlabInfo(ostream &where, unsigned long long slabID)
+{
+    if (! slabs->isBinIDSafeAndAllocated(slabID)) {
+        where << "Slab ID " << slabID << " is invalid or not used.";
+        return;
+    }
+
+    SlabInfo *slabInfo = slabsInfo->getBin(slabID);
+    where << "Size of this slab's class is " << slabInfo->slabObjectSize << endl;
 }
 
 } /* namespace Db */
@@ -233,23 +248,21 @@ int main()
                                                BinFile<Slab>::minimalIndexExpandSize()),
                              new BinFile<SlabInfo>("/tmp/main.slabinfos",
                                                    new BinFileMap("/tmp/main.slabinfos.map"),
-                                                   BinFile<Slab>::minimalIndexExpandSize()));
+                                                   BinFile<SlabInfo>::minimalIndexExpandSize()));
 
-    slabs->slabs->openMMapedFile();
-    slabs->slabsInfo->openMMapedFile();
-
-    slabs->initialize();
+    long command_counter = 0;
 
     while (true) {
-        cerr << "> ";
+        //cerr << "> ";
 
         string command;
-
         cin >> command;
 
         if (command == "write") {
             string value;
             cin >> value;
+
+            assert(0 != value.length());
 
             ObjectID oid = slabs->saveData(value.c_str(), value.length());
 
@@ -264,6 +277,12 @@ int main()
             char *result = 0;
             size_t resultSize = slabs->readData(result, oid);
 
+            if (0 == resultSize) {
+                cerr << "slab_id: " << oid.slabID << " slab_inner_id: " << oid.slabInnerID << endl;
+                slabs->dumpSlabInfo(cerr, oid.slabID);
+                assert(0 != resultSize);
+            }
+
             for (int i = 0; i < resultSize; i++) {
                 cout << result[i];
             }
@@ -273,10 +292,9 @@ int main()
         if (command == "exit") {
             return 0;
         } else {
-            cerr << "Unknown command";
+            cerr << "Unknown command: '" << command << "'" << endl;
         }
     }
-
     return 0;
 }
 

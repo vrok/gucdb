@@ -8,12 +8,10 @@
 #ifndef TRIELEAF_H_
 #define TRIELEAF_H_
 
+#include "SystemParams.h"
 #include "DatabaseKey.h"
 
 namespace Db {
-
-// We might prefer to use actual page size.
-#define TYPICAL_PAGE_SIZE 4096
 
 template <typename ValueType>
 class TrieLeafNavigator;

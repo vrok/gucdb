@@ -4,7 +4,7 @@ import random
 import sys
 
 MAX_LEN = 9
-TEST_LEN = 7000
+TEST_LEN = 100000
 REMOVE_THRESHOLD = 6
 
 all_db = {}

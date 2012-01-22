@@ -20,7 +20,6 @@ template <typename BinType>
 class BinFile : public MMapedFile {
 private:
     void assureNewBinIsUsable(off_t binOffset);
-
     off_t getBinOffset(unsigned long id);
 
     BinFileMap *binFileMap;
@@ -32,9 +31,9 @@ public: /* TODO: change to protected */
     OpeningResult openMMapedFile();
 
     BinType *getBin(unsigned long id);
-
     unsigned long long getNewBinByID();
-
+    bool isBinFree(unsigned long id);
+    bool isBinIDSafeAndAllocated(unsigned long id);
     void freeBin(unsigned long id);
 
     static unsigned long minimalIndexExpandSize();
