@@ -31,6 +31,10 @@ private:
     void addBulk(unsigned char *source, unsigned long length);
     int compareKeys(unsigned char *currentCharacter, unsigned char *endCharacter, const DatabaseKey &key, int firstCharacterIdx);
 
+    void mapAdd(const DatabaseKey &key, int firstCharacterIdx, unsigned short valueOffset);
+    unsigned short mapGet(bool &found, int iteration, unsigned short hashed);
+    //void hashMapRemove( ??? );
+
 public:
     unsigned char data[2 * TYPICAL_PAGE_SIZE];
     //unsigned char data[90];

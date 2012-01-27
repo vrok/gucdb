@@ -11,18 +11,143 @@
 
 #include <cassert>
 #include <cstring>
+#include <algorithm>
 #include <iostream>
 using namespace std;
 
 namespace Db {
 
+/*
+ * All leaf data is stored within Leaf::data array. It is just a chain of bytes,
+ * you should be able to load such a chain of bytes, cast it to TrieLeaf and use it.
+ *
+ * Here's how it is organized (^ - leaf bytes beginning, $ - leaf bytes end, ):
+ *
+ * <leaf> = ^ <values> <hash_map> <used_size> $
+ * <values> = <value> <values> | <unused_space (might be 0 bytes) >
+ * <value> = <value_length> <value_contents> <value_key>
+ * <hash_map> = <hash_map_elems> <hash_map_elems_count>
+ * <hash_map_elems> = <hash_map_elem> <hash_map_elems> | <null>
+ * <hash_map_elem> = <hashed_value> <value_offset>
+ *
+ */
+
+
+struct MapElem
+{
+    unsigned short hashedValue;
+    unsigned short valueOffset;
+
+    friend bool operator<(const MapElem &a, const MapElem &b)
+    {
+        return a.hashedValue < b.hashedValue;
+    }
+};
+
+
+#define SOF_USED_SIZE sizeof(unsigned short)
+#define SOF_MAP_COUNT sizeof(unsigned short)
+#define SOF_VALUE_LEN sizeof(unsigned short)
+#define SOF_MAP_ELEM sizeof(MapElem)
+
+#define DATA_LOCATION_TO_MAP(loc)        (*(MapElem*)(loc))
+#define DATA_LOCATION_TO_US(loc)         (*((unsigned short*)(loc)))
 #define DATA_LOCATION_TO_UL(loc)         (*((unsigned long*)(loc)))
 #define DATA_LOCATION_TO_ULL(loc)        (*((unsigned long long*)(loc)))
 #define DATA_LOCATION_TO_VALUE(loc)      (*((ValueType*)(loc)))
-/* Used size is stored in the first location of the data array. */
-#define LEAF_USED_SIZE                   (DATA_LOCATION_TO_UL(data) + sizeof(unsigned long))
-#define OTHER_LEAF_USED_SIZE(leaf_ptr)   (DATA_LOCATION_TO_UL(leaf_ptr->data) + sizeof(unsigned long))
+
+#define DATA_END (data + sizeof(data))
+
+#define LEAF_USED_SIZE \
+    (DATA_LOCATION_TO_US(DATA_END - SOF_USED_SIZE) + SOF_USED_SIZE)
+
+/* below doesnt work */
+#define OTHER_LEAF_USED_SIZE(leaf_ptr) \
+    (DATA_LOCATION_TO_US(leaf_ptr->data + sizeof(leaf_ptr->data) - SOF_USED_SIZE) + SOF_USED_SIZE)
+
 #define DATA_AFTER_LEAF_USED_SIZE        (data + sizeof(unsigned long))
+
+#define MAP_COUNT \
+    DATA_LOCATION_TO_US(DATA_END - SOF_USED_SIZE - SOF_MAP_COUNT)
+
+#define MAP_END \
+    ((MapElem*)(DATA_END - SOF_USED_SIZE - SOF_MAP_COUNT))
+
+#define MAP_BEGIN \
+    ((MapElem*)(DATA_END - SOF_USED_SIZE - SOF_MAP_COUNT - (sizeof(MapElem) * MAP_COUNT)))
+
+#define FREE_SPACE_OFFSET \
+    (LEAF_USED_SIZE - (MAP_COUNT * SOF_MAP_ELEM) - SOF_MAP_COUNT)
+
+#define FREE_SPACE_START \
+    (data + FREE_SPACE_OFFSET)
+
+
+
+
+static unsigned short hash(const DatabaseKey &key, int firstCharacterIdx)
+{
+    unsigned short current = 0;
+    for (int i = firstCharacterIdx; i < key.length; i++) {
+        current = (unsigned short) key.data[i];
+    }
+    return current;
+}
+
+
+template <typename ValueType>
+void TrieLeaf<ValueType>::mapAdd(const DatabaseKey &key, int firstCharacterIdx, unsigned short valueOffset)
+{
+    unsigned short hashed = hash(key, firstCharacterIdx);
+
+    MapElem *currentFit = MAP_BEGIN - 1;
+
+    for (MapElem *elem = MAP_BEGIN; elem < MAP_END; elem++) {
+        if (elem->hashedValue >= hashed) {
+            break;
+        }
+
+        currentFit = elem;
+        *(elem - 1) = *elem;
+    }
+
+    currentFit->hashedValue = hashed;
+    currentFit->valueOffset = valueOffset;
+
+    MAP_COUNT++;
+}
+
+
+template <typename ValueType>
+unsigned short TrieLeaf<ValueType>::mapGet(bool &found, int iteration, unsigned short hashed)
+{
+    MapElem comparator;
+    comparator.hashedValue = hashed;
+    comparator.valueOffset = 0; /* This shouldn't be used, MapElem's operator< accesses only hashedValue. */
+
+    MapElem *firstMatch = lower_bound(MAP_BEGIN, MAP_END, comparator);
+
+    if (firstMatch == MAP_END) {
+        found = false;
+        return 0;
+    }
+
+    firstMatch += iteration;
+
+    if (firstMatch >= MAP_END) {
+        found = false;
+        return 0;
+    }
+
+    if (firstMatch->hashedValue != comparator.hashedValue) {
+        found = false;
+        return 0;
+    }
+
+    found = true;
+    return firstMatch->valueOffset;
+}
+
 
 template <typename ValueType>
 unsigned char *TrieLeaf<ValueType>::find(const DatabaseKey &key, int firstCharacterIdx)
@@ -85,27 +210,42 @@ int TrieLeaf<ValueType>::compareKeys(unsigned char *currentCharacter,
 template <typename ValueType>
 ValueType TrieLeaf<ValueType>::get(const DatabaseKey &key, int firstCharacterIdx)
 {
-    unsigned char *searchResult = find(key, firstCharacterIdx);
-    if (searchResult == NULL) {
-        return 0;
-    }
+    bool found = false;
+    int iteration = 0;
+    unsigned short hashed = hash(key, firstCharacterIdx);
+    int compare = 0;
+    unsigned short valueOffset = 0;
 
-    return DATA_LOCATION_TO_VALUE(searchResult + sizeof(unsigned long) + DATA_LOCATION_TO_UL(searchResult));
+    do {
+        valueOffset = mapGet(found, iteration++, hashed);
+
+        if (!found)
+            return 0;
+
+        compare = compareKeys(data + valueOffset + SOF_VALUE_LEN,
+                              data + valueOffset + SOF_VALUE_LEN + DATA_LOCATION_TO_US(data + valueOffset),
+                              key, firstCharacterIdx);
+    } while (compare != 0);
+
+    return DATA_LOCATION_TO_VALUE(data + valueOffset + SOF_VALUE_LEN + DATA_LOCATION_TO_US(data + valueOffset));
 }
 
 template <typename ValueType>
 void TrieLeaf<ValueType>::add(const DatabaseKey &key, int firstCharacterIdx, ValueType value)
 {
     assert(canFit(key, firstCharacterIdx));
-    unsigned long activeKeyLength = key.length - firstCharacterIdx;
+    unsigned short activeKeyLength = key.length - firstCharacterIdx;
 
-    DATA_LOCATION_TO_UL(data + LEAF_USED_SIZE) = activeKeyLength;
+    DATA_LOCATION_TO_US(FREE_SPACE_START) = activeKeyLength;
 
-    memcpy((void*)(data + LEAF_USED_SIZE + sizeof(unsigned long)),
+    memcpy((void*)(FREE_SPACE_START + SOF_VALUE_LEN),
            (void*)(key.data + firstCharacterIdx), activeKeyLength);
 
-    DATA_LOCATION_TO_VALUE(data + LEAF_USED_SIZE + sizeof(unsigned long) + activeKeyLength) = value;
-    DATA_LOCATION_TO_UL(data) += sizeof(unsigned long) + activeKeyLength + sizeof(ValueType);
+    DATA_LOCATION_TO_VALUE(FREE_SPACE_START + SOF_VALUE_LEN + activeKeyLength) = value;
+
+    mapAdd(key, firstCharacterIdx, FREE_SPACE_OFFSET);
+
+    DATA_LOCATION_TO_US(DATA_END - SOF_USED_SIZE) += SOF_VALUE_LEN + activeKeyLength + sizeof(ValueType) + SOF_MAP_ELEM;
 }
 
 template <typename ValueType>
@@ -149,7 +289,9 @@ bool TrieLeaf<ValueType>::isEmpty()
 template <typename ValueType>
 bool TrieLeaf<ValueType>::canFit(const DatabaseKey &key, int firstCharacterIdx)
 {
-    return (key.length - firstCharacterIdx + sizeof(unsigned int) + sizeof(ValueType)) <= (sizeof(data) - LEAF_USED_SIZE);
+    return (key.length - firstCharacterIdx + SOF_VALUE_LEN + sizeof(ValueType) + SOF_MAP_ELEM)
+            <= (sizeof(data) - LEAF_USED_SIZE);
+    //return (key.length - firstCharacterIdx + sizeof(unsigned int) + sizeof(ValueType)) <= (sizeof(data) - LEAF_USED_SIZE);
 }
 
 template <typename ValueType>

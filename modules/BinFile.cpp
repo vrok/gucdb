@@ -28,8 +28,8 @@ template<typename BinType>
 BinFile<BinType>::BinFile(const string &filename, BinFileMap *trieMap, unsigned long initialFileSize)
     : filename(filename), initialFileSize(initialFileSize), binFileMap(trieMap)
 {
-    /* These asserts are for future developers, trying to store not nicely padded objects
-     * using this class (it would introduce intricate bugs).
+    /* These asserts are for future developers who would try to store not nicely padded objects
+     * using this class (it would introduce nasty, intricate bugs).
      */
     if (sizeof(BinType) > SystemParams::pageSize()) {
         assert(0 == (sizeof(BinType) % SystemParams::pageSize()));
