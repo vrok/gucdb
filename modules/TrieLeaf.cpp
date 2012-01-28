@@ -94,7 +94,6 @@ static unsigned short hash(const DatabaseKey &key, int firstCharacterIdx)
     return current;
 }
 
-
 template <typename ValueType>
 void TrieLeaf<ValueType>::mapAdd(const DatabaseKey &key, int firstCharacterIdx, unsigned short valueOffset)
 {
@@ -116,7 +115,6 @@ void TrieLeaf<ValueType>::mapAdd(const DatabaseKey &key, int firstCharacterIdx, 
 
     MAP_COUNT++;
 }
-
 
 template <typename ValueType>
 unsigned short TrieLeaf<ValueType>::mapGet(bool &found, int iteration, unsigned short hashed)
@@ -148,6 +146,58 @@ unsigned short TrieLeaf<ValueType>::mapGet(bool &found, int iteration, unsigned 
     return firstMatch->valueOffset;
 }
 
+template <typename ValueType>
+MapElem *TrieLeaf<ValueType>::mapFindElem(const MapElem &elem)
+{
+    MapElem *occurence = lower_bound(MAP_BEGIN, MAP_END, elem);
+    if (occurence == MAP_END) {
+        return NULL;
+    }
+
+    while ((occurence < MAP_END) && (occurence->valueOffset != elem.valueOffset)) {
+        occurence++;
+    }
+
+    if (occurence->valueOffset != elem.valueOffset) {
+        return NULL;
+    }
+
+    return occurence;
+}
+
+template <typename ValueType>
+void TrieLeaf<ValueType>::mapRemove(const DatabaseKey &key, int firstCharacterIdx, unsigned short valueOffset)
+{
+    unsigned short hashed = hash(key, firstCharacterIdx);
+
+    MapElem comparator;
+    comparator.hashedValue = hashed;
+    comparator.valueOffset = valueOffset;
+
+    MapElem *firstMatch = mapFindElem(comparator);
+
+    assert(NULL != firstMatch); /* The item we're removing should exist. */
+
+    /* Shift everything below, overwriting the item to be deleted. */
+    for (MapElem *elem = firstMatch - 1; elem >= MAP_BEGIN; elem--) {
+        *(elem + 1) = *elem;
+    }
+
+    MAP_COUNT--;
+}
+
+template <typename ValueType>
+void TrieLeaf<ValueType>::mapUpdate(unsigned short hashed, unsigned short currentValueOffset, unsigned short newValueOffset)
+{
+    MapElem comparator;
+    comparator.hashedValue = hashed;
+    comparator.valueOffset = currentValueOffset;
+
+    MapElem *firstMatch = mapFindElem(comparator);
+    assert(NULL != firstMatch); /* The item we're updating should exist. */
+
+    firstMatch->valueOffset = newValueOffset;
+}
 
 template <typename ValueType>
 unsigned char *TrieLeaf<ValueType>::find(const DatabaseKey &key, int firstCharacterIdx)
@@ -169,6 +219,29 @@ unsigned char *TrieLeaf<ValueType>::find(const DatabaseKey &key, int firstCharac
     }
 
     return NULL;
+}
+
+template <typename ValueType>
+ValueType *TrieLeaf<ValueType>::findKeyValue(const DatabaseKey &key, int firstCharacterIdx)
+{
+    bool found = false;
+    int iteration = 0;
+    unsigned short hashed = hash(key, firstCharacterIdx);
+    int compare = 0;
+    unsigned short valueOffset = 0;
+
+    do {
+        valueOffset = mapGet(found, iteration++, hashed);
+
+        if (!found)
+            return NULL;
+
+        compare = compareKeys(data + valueOffset + SOF_VALUE_LEN,
+                              data + valueOffset + SOF_VALUE_LEN + DATA_LOCATION_TO_US(data + valueOffset),
+                              key, firstCharacterIdx);
+    } while (compare != 0);
+
+    return & DATA_LOCATION_TO_VALUE(data + valueOffset + SOF_VALUE_LEN + DATA_LOCATION_TO_US(data + valueOffset));
 }
 
 template <typename ValueType>
@@ -210,24 +283,13 @@ int TrieLeaf<ValueType>::compareKeys(unsigned char *currentCharacter,
 template <typename ValueType>
 ValueType TrieLeaf<ValueType>::get(const DatabaseKey &key, int firstCharacterIdx)
 {
-    bool found = false;
-    int iteration = 0;
-    unsigned short hashed = hash(key, firstCharacterIdx);
-    int compare = 0;
-    unsigned short valueOffset = 0;
+    ValueType *value = findKeyValue(key, firstCharacterIdx);
 
-    do {
-        valueOffset = mapGet(found, iteration++, hashed);
+    if (value == NULL) {
+        return 0;
+    }
 
-        if (!found)
-            return 0;
-
-        compare = compareKeys(data + valueOffset + SOF_VALUE_LEN,
-                              data + valueOffset + SOF_VALUE_LEN + DATA_LOCATION_TO_US(data + valueOffset),
-                              key, firstCharacterIdx);
-    } while (compare != 0);
-
-    return DATA_LOCATION_TO_VALUE(data + valueOffset + SOF_VALUE_LEN + DATA_LOCATION_TO_US(data + valueOffset));
+    return *value;
 }
 
 template <typename ValueType>
@@ -251,12 +313,11 @@ void TrieLeaf<ValueType>::add(const DatabaseKey &key, int firstCharacterIdx, Val
 template <typename ValueType>
 void TrieLeaf<ValueType>::update(const DatabaseKey &key, int firstCharacterIdx, ValueType value)
 {
-    unsigned char *searchResult = find(key, firstCharacterIdx);
-    if (searchResult == NULL) {
-        return;
-    }
+    ValueType *storedValue = findKeyValue(key, firstCharacterIdx);
 
-    DATA_LOCATION_TO_VALUE(searchResult + sizeof(unsigned long) + DATA_LOCATION_TO_UL(searchResult)) = value;
+    if (storedValue != NULL) {
+        *storedValue = value;
+    }
 }
 
 template <typename ValueType>

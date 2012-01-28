@@ -91,7 +91,7 @@ TEST_F(TrieLeafTest, TestSomeGetsAndSets)
     ASSERT_EQ(3000, leaf.get(key1, 0));
     ASSERT_EQ(5000, leaf.get(key2, 0));
 }
-#if 0
+
 TEST_F(TrieLeafTest, TestUpdate)
 {
     Db::DatabaseKey key;
@@ -108,6 +108,7 @@ TEST_F(TrieLeafTest, TestUpdate)
     ASSERT_EQ(4000, leaf.get(key, 0));
 }
 
+#if 0
 TEST_F(TrieLeafTest, TestRemove)
 {
     Db::DatabaseKey key;

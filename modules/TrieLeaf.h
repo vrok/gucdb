@@ -19,6 +19,8 @@ class TrieLeafNavigator;
 template <typename ValueType>
 class Trie;
 
+struct MapElem;
+
 /* Important: ValueType should be small, as it is often passed by value (or copied in some other way).
  * Ideally, it should be derived from a built-in type, like an offset or a pointer.
  */
@@ -33,7 +35,11 @@ private:
 
     void mapAdd(const DatabaseKey &key, int firstCharacterIdx, unsigned short valueOffset);
     unsigned short mapGet(bool &found, int iteration, unsigned short hashed);
-    //void hashMapRemove( ??? );
+    MapElem *mapFindElem(const MapElem &elem);
+    void mapRemove(const DatabaseKey &key, int firstCharacterIdx, unsigned short valueOffset);
+    void mapUpdate(unsigned short hashed, unsigned short currentValueOffset, unsigned short newValueOffset);
+
+    ValueType *findKeyValue(const DatabaseKey &key, int firstCharacterIdx);
 
 public:
     unsigned char data[2 * TYPICAL_PAGE_SIZE];
