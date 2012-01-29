@@ -108,7 +108,6 @@ TEST_F(TrieLeafTest, TestUpdate)
     ASSERT_EQ(4000, leaf.get(key, 0));
 }
 
-#if 0
 TEST_F(TrieLeafTest, TestRemove)
 {
     Db::DatabaseKey key;
@@ -169,6 +168,7 @@ TEST_F(TrieLeafTest, TestEmptyKey)
     ASSERT_EQ(2357, leaf.get(key, 0));
 }
 
+#if 0
 TEST_F(TrieLeafTest, TestMoveToAnother)
 {
     Db::DatabaseKey key1, key2;

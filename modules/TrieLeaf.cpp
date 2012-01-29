@@ -59,7 +59,7 @@ struct MapElem
 #define DATA_END (data + sizeof(data))
 
 #define LEAF_USED_SIZE \
-    (DATA_LOCATION_TO_US(DATA_END - SOF_USED_SIZE) + SOF_USED_SIZE)
+    (DATA_LOCATION_TO_US(DATA_END - SOF_USED_SIZE) + SOF_MAP_COUNT + SOF_USED_SIZE)
 
 /* below doesnt work */
 #define OTHER_LEAF_USED_SIZE(leaf_ptr) \
@@ -77,21 +77,25 @@ struct MapElem
     ((MapElem*)(DATA_END - SOF_USED_SIZE - SOF_MAP_COUNT - (sizeof(MapElem) * MAP_COUNT)))
 
 #define FREE_SPACE_OFFSET \
-    (LEAF_USED_SIZE - (MAP_COUNT * SOF_MAP_ELEM) - SOF_MAP_COUNT)
+    (LEAF_USED_SIZE - (MAP_COUNT * SOF_MAP_ELEM) - SOF_MAP_COUNT - SOF_USED_SIZE)
 
 #define FREE_SPACE_START \
     (data + FREE_SPACE_OFFSET)
 
 
 
+static unsigned short hash(const unsigned char *data, size_t length)
+{
+    unsigned short current = 0;
+    for (size_t i = 0; i < length; i++) {
+        current += (unsigned short) data[i];
+    }
+    return current;
+}
 
 static unsigned short hash(const DatabaseKey &key, int firstCharacterIdx)
 {
-    unsigned short current = 0;
-    for (int i = firstCharacterIdx; i < key.length; i++) {
-        current = (unsigned short) key.data[i];
-    }
-    return current;
+    return hash(& key.data[firstCharacterIdx], key.length - firstCharacterIdx);
 }
 
 template <typename ValueType>
@@ -327,21 +331,34 @@ void TrieLeaf<ValueType>::update(const DatabaseKey &key, int firstCharacterIdx, 
 template <typename ValueType>
 void TrieLeaf<ValueType>::remove(const DatabaseKey &key, int firstCharacterIdx)
 {
-    unsigned char *searchResult = find(key, firstCharacterIdx);
-    if (searchResult == NULL) {
+    bool found = false;
+
+    unsigned short offset = mapFindKeyValue(found, key, firstCharacterIdx);
+
+    if (! found) {
         return;
     }
 
-    unsigned long deletedSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(searchResult) + sizeof(ValueType);
-    unsigned char *currentLoc = searchResult + deletedSlotSize;
+    mapRemove(key, firstCharacterIdx, offset);
+    DATA_LOCATION_TO_US(DATA_END - SOF_USED_SIZE) -= SOF_MAP_ELEM;
 
-    while (currentLoc < (data + LEAF_USED_SIZE)) {
-        unsigned long currentSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(ValueType);
+    unsigned short deletedSlotSize = SOF_VALUE_LEN + DATA_LOCATION_TO_US(data + offset) + sizeof(ValueType);
+
+    unsigned short currentOffset = offset + deletedSlotSize;
+
+    while (currentOffset < FREE_SPACE_OFFSET) {
+        unsigned char *currentLoc = data + currentOffset;
+        unsigned long currentSlotSize = SOF_VALUE_LEN + DATA_LOCATION_TO_US(currentLoc) + sizeof(ValueType);
+
+        unsigned short hashed = hash(currentLoc + SOF_VALUE_LEN, DATA_LOCATION_TO_US(currentLoc));
+
+        mapUpdate(hashed, currentOffset, currentOffset - deletedSlotSize);
+
         memmove(currentLoc - deletedSlotSize, currentLoc, currentSlotSize);
-        currentLoc += currentSlotSize;
+        currentOffset += currentSlotSize;
     }
 
-    DATA_LOCATION_TO_UL(data) -= deletedSlotSize;
+    DATA_LOCATION_TO_US(DATA_END - SOF_USED_SIZE) -= deletedSlotSize;
 }
 
 template <typename ValueType>
