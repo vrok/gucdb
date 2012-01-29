@@ -377,7 +377,6 @@ TEST_F(TrieLeafTest, TestIsEmpty)
     ASSERT_FALSE(leaf.isEmpty());
 }
 
-#if 0
 TEST_F(TrieLeafTest, TestStripOneLeadingCharacter)
 {
     string key_data("test");
@@ -434,7 +433,6 @@ TEST_F(TrieLeafTest, TestStripMultipleCharacters)
     ASSERT_EQ(5000, leaf.get(key2, 1));
     ASSERT_EQ(0, leaf.get(key3, 1));
 }
-#endif
 
 } // namespace
 

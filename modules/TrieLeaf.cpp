@@ -377,7 +377,6 @@ template <typename ValueType>
 void TrieLeaf<ValueType>::moveAllBelowToAnotherLeaf(const DatabaseKey &key,
         int firstCharacterIdx, TrieLeaf<ValueType> &anotherLeaf)
 {
-    //unsigned char *currentLoc = data;
     unsigned short currentOffset = 0;
     unsigned long shift = 0;
 
@@ -464,34 +463,46 @@ unsigned char TrieLeaf<ValueType>::findBestSplitPoint(unsigned char leftmostPoin
 template<typename ValueType>
 ValueType TrieLeaf<ValueType>::stripLeadingCharacter()
 {
-    unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
-    unsigned long long result = 0;
-    unsigned long shift = 0;
+    ValueType result = 0;
+    unsigned short shift = 0;
+    unsigned short currentOffset = 0;
 
-    while (currentLoc < (data + LEAF_USED_SIZE)) {
-        unsigned long currentKeyLen = DATA_LOCATION_TO_UL(currentLoc);
-        unsigned long currentSlotSize = sizeof(unsigned long) + currentKeyLen + sizeof(ValueType);
+    while (currentOffset < FREE_SPACE_OFFSET) {
+        unsigned char *currentLoc = data + currentOffset;
+        unsigned short currentKeyLen = DATA_LOCATION_TO_US(currentLoc);
+        unsigned short currentSlotSize = SOF_VALUE_LEN + currentKeyLen + sizeof(ValueType);
 
-        if (DATA_LOCATION_TO_UL(currentLoc) == 1) {
+        if (currentKeyLen == 1) {
             /* Key ends exactly in the leaf. We are expanding vertically, thus this value should
              * be moved upwards, to the newly created node.
              */
-            result = DATA_LOCATION_TO_VALUE(currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc));
+            result = DATA_LOCATION_TO_VALUE(currentLoc + SOF_VALUE_LEN + currentKeyLen);
+
+            unsigned short hashed = hash(currentLoc + SOF_VALUE_LEN, currentKeyLen);
+            mapRemove(hashed, currentOffset);
+            DATA_LOCATION_TO_US(DATA_END - SOF_USED_SIZE) -= SOF_MAP_ELEM;
+
             shift += currentSlotSize;
-            currentLoc += currentSlotSize;
+            currentOffset += currentSlotSize;
             continue;
         }
 
-        DATA_LOCATION_TO_UL(currentLoc - shift) = currentKeyLen - 1;
-        memmove(currentLoc + sizeof(unsigned long) - shift,
-                currentLoc + sizeof(unsigned long) + 1,
-                currentKeyLen - 1 + sizeof(unsigned long long));
+        unsigned short hashedOld = hash(currentLoc + SOF_VALUE_LEN, currentKeyLen);
+        unsigned short hashedNew = hash(currentLoc + SOF_VALUE_LEN + 1, currentKeyLen - 1);
+
+        mapRemove(hashedOld, currentOffset);
+        mapAdd(hashedNew, currentOffset - shift);
+
+        DATA_LOCATION_TO_US(currentLoc - shift) = currentKeyLen - 1;
+        memmove(currentLoc + SOF_VALUE_LEN - shift,
+                currentLoc + SOF_VALUE_LEN + 1,
+                currentKeyLen - 1 + sizeof(ValueType));
 
         shift++;
-        currentLoc += currentSlotSize;
+        currentOffset += currentSlotSize;
     }
 
-    DATA_LOCATION_TO_UL(data) -= shift;
+    DATA_LOCATION_TO_US(DATA_END - SOF_USED_SIZE) -= shift;
     return result;
 }
 
