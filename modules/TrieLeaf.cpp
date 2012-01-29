@@ -200,25 +200,23 @@ void TrieLeaf<ValueType>::mapUpdate(unsigned short hashed, unsigned short curren
 }
 
 template <typename ValueType>
+unsigned char *TrieLeaf<ValueType>::getFreeMemStart()
+{
+    return FREE_SPACE_START;
+}
+
+template <typename ValueType>
 unsigned char *TrieLeaf<ValueType>::find(const DatabaseKey &key, int firstCharacterIdx)
 {
-    unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
+    bool found = false;
 
-    while (currentLoc < (data + LEAF_USED_SIZE)) {
+    unsigned short offset = mapFindKeyValue(found, key, firstCharacterIdx);
 
-        int strCompare = compareKeys(currentLoc + sizeof(unsigned long),
-                                     currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc),
-                                     key,
-                                     firstCharacterIdx);
-
-        if (strCompare == 0) {
-            return currentLoc;
-        }
-
-        currentLoc += sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(ValueType);
+    if (! found) {
+        return NULL;
     }
 
-    return NULL;
+    return data + offset;
 }
 
 template <typename ValueType>
@@ -378,11 +376,11 @@ void TrieLeaf<ValueType>::moveAllBelowToAnotherLeaf(const DatabaseKey &key,
         int firstCharacterIdx, TrieLeaf<ValueType> &anotherLeaf)
 {
     unsigned short currentOffset = 0;
-    unsigned long shift = 0;
+    unsigned short shift = 0;
 
     while (currentOffset < FREE_SPACE_OFFSET) {
         unsigned char *currentLoc = data + currentOffset;
-        unsigned long currentSlotSize = SOF_VALUE_LEN + DATA_LOCATION_TO_US(currentLoc) + sizeof(ValueType);
+        unsigned short currentSlotSize = SOF_VALUE_LEN + DATA_LOCATION_TO_US(currentLoc) + sizeof(ValueType);
 
         int strCompare = compareKeys(currentLoc + SOF_VALUE_LEN,
                                      currentLoc + SOF_VALUE_LEN + DATA_LOCATION_TO_US(currentLoc),
@@ -399,10 +397,10 @@ void TrieLeaf<ValueType>::moveAllBelowToAnotherLeaf(const DatabaseKey &key,
             shift += currentSlotSize;
         } else {
             if (shift > 0) {
-                memmove(currentLoc - shift, currentLoc, currentSlotSize);
-
                 unsigned short hashed = hash(currentLoc + SOF_VALUE_LEN, DATA_LOCATION_TO_US(currentLoc));
                 mapUpdate(hashed, currentOffset, currentOffset - shift);
+
+                memmove(currentLoc - shift, currentLoc, currentSlotSize);
             }
         }
 
@@ -509,7 +507,7 @@ ValueType TrieLeaf<ValueType>::stripLeadingCharacter()
 template<typename ValueType>
 TrieLeafNavigator<ValueType> TrieLeaf<ValueType>::produceNaviagor()
 {
-    return TrieLeafNavigator<ValueType>(DATA_AFTER_LEAF_USED_SIZE, this);
+    return TrieLeafNavigator<ValueType>(data, this);
 }
 
 template<typename ValueType>
@@ -519,27 +517,27 @@ TrieLeafNavigator<ValueType>::TrieLeafNavigator(unsigned char *currentLoc, TrieL
 
 template<typename ValueType>
 unsigned char* TrieLeafNavigator<ValueType>::getPointer() {
-    return currentLoc + sizeof(unsigned long);
+    return currentLoc + SOF_VALUE_LEN;
 }
 
 template<typename ValueType>
-unsigned int TrieLeafNavigator<ValueType>::getLength() {
-    return DATA_LOCATION_TO_UL(currentLoc);
+unsigned short TrieLeafNavigator<ValueType>::getLength() {
+    return DATA_LOCATION_TO_US(currentLoc);
 }
 
 template<typename ValueType>
 ValueType TrieLeafNavigator<ValueType>::getValue() {
-    return DATA_LOCATION_TO_VALUE(currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc));
+    return DATA_LOCATION_TO_VALUE(currentLoc + SOF_VALUE_LEN + DATA_LOCATION_TO_US(currentLoc));
 }
 
 template<typename ValueType>
 void TrieLeafNavigator<ValueType>::next() {
-    currentLoc += sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(ValueType);
+    currentLoc += SOF_VALUE_LEN + DATA_LOCATION_TO_US(currentLoc) + sizeof(ValueType);
 }
 
 template<typename ValueType>
 bool TrieLeafNavigator<ValueType>::isEnd() {
-    return currentLoc >= (context->data + OTHER_LEAF_USED_SIZE(context));
+    return currentLoc >= context->getFreeMemStart();
 }
 
 template class TrieLeaf<unsigned long long>;

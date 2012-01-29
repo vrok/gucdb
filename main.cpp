@@ -5,7 +5,6 @@ using namespace std;
 #include "modules/Trie.h"
 #include "modules/Database.h"
 
-#if 0
 int main(int argc, char *argv[])
 {
     string cmd, key;
@@ -13,8 +12,8 @@ int main(int argc, char *argv[])
     Db::Database dbInstance("/tmp/");
     unsigned long long counter = 0;
     while (1) {
-        if (counter++ % 1000 == 0) {
-            cout << counter << endl;
+        if (counter++ == 2286) {
+            //cout << counter << endl;
         }
         //cout << "> ";
         cout.flush();
@@ -26,12 +25,12 @@ int main(int argc, char *argv[])
         } else
         if (cmd == "write") {
             cin >> key >> value;
-            //cout << dbInstance.write(key.c_str(), value) << endl;
+            cout << dbInstance.write(key.c_str(), value) << endl;
             dbInstance.write(key.c_str(), value);
         } else
         if (cmd == "remove") {
             cin >> key;
-            //cout << dbInstance.remove(key.c_str()) << endl;
+            cout << dbInstance.remove(key.c_str()) << endl;
             dbInstance.remove(key.c_str());
         } else
         if (cmd == "dump") {
@@ -45,5 +44,4 @@ int main(int argc, char *argv[])
     }
 	return 0;
 }
-#endif
 

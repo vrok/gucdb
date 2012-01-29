@@ -236,7 +236,7 @@ void Slabs::dumpSlabInfo(ostream &where, unsigned long long slabID)
 } /* namespace Db */
 
 
-#define TEST_SLABS
+//#define TEST_SLABS
 #ifdef TEST_SLABS
 
 using namespace Db;

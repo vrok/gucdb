@@ -28,6 +28,7 @@ template <typename ValueType>
 class TrieLeaf {
 private:
     friend class Trie<ValueType>;
+    friend class TrieLeafNavigator<ValueType>;
 
     unsigned char *find(const DatabaseKey &key, int firstCharacterIdx);
     void addBulk(unsigned char *source, unsigned long length);
@@ -38,6 +39,7 @@ private:
     MapElem *mapFindElem(const MapElem &elem);
     void mapRemove(unsigned short hashed, unsigned short valueOffset);
     void mapUpdate(unsigned short hashed, unsigned short currentValueOffset, unsigned short newValueOffset);
+    unsigned char *getFreeMemStart();
 
     unsigned short mapFindKeyValue(bool &found, const DatabaseKey &key, int firstCharacterIdx);
 
@@ -69,7 +71,7 @@ private:
 public:
 
     unsigned char *getPointer();
-    unsigned int getLength();
+    unsigned short getLength();
     ValueType getValue();
 
     void next();
