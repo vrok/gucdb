@@ -39,7 +39,7 @@ private:
     void mapRemove(const DatabaseKey &key, int firstCharacterIdx, unsigned short valueOffset);
     void mapUpdate(unsigned short hashed, unsigned short currentValueOffset, unsigned short newValueOffset);
 
-    ValueType *findKeyValue(const DatabaseKey &key, int firstCharacterIdx);
+    unsigned short mapFindKeyValue(bool &found, const DatabaseKey &key, int firstCharacterIdx);
 
 public:
     unsigned char data[2 * TYPICAL_PAGE_SIZE];

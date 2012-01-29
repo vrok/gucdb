@@ -222,26 +222,28 @@ unsigned char *TrieLeaf<ValueType>::find(const DatabaseKey &key, int firstCharac
 }
 
 template <typename ValueType>
-ValueType *TrieLeaf<ValueType>::findKeyValue(const DatabaseKey &key, int firstCharacterIdx)
+unsigned short TrieLeaf<ValueType>::mapFindKeyValue(bool &found, const DatabaseKey &key, int firstCharacterIdx)
 {
-    bool found = false;
     int iteration = 0;
     unsigned short hashed = hash(key, firstCharacterIdx);
     int compare = 0;
     unsigned short valueOffset = 0;
 
+    found = false;
+
     do {
         valueOffset = mapGet(found, iteration++, hashed);
 
         if (!found)
-            return NULL;
+            return 0;
 
         compare = compareKeys(data + valueOffset + SOF_VALUE_LEN,
                               data + valueOffset + SOF_VALUE_LEN + DATA_LOCATION_TO_US(data + valueOffset),
                               key, firstCharacterIdx);
     } while (compare != 0);
 
-    return & DATA_LOCATION_TO_VALUE(data + valueOffset + SOF_VALUE_LEN + DATA_LOCATION_TO_US(data + valueOffset));
+    return valueOffset;
+    //return & DATA_LOCATION_TO_VALUE(data + valueOffset + SOF_VALUE_LEN + DATA_LOCATION_TO_US(data + valueOffset));
 }
 
 template <typename ValueType>
@@ -283,13 +285,14 @@ int TrieLeaf<ValueType>::compareKeys(unsigned char *currentCharacter,
 template <typename ValueType>
 ValueType TrieLeaf<ValueType>::get(const DatabaseKey &key, int firstCharacterIdx)
 {
-    ValueType *value = findKeyValue(key, firstCharacterIdx);
+    bool found = false;
+    unsigned short valueOffset = mapFindKeyValue(found, key, firstCharacterIdx);
 
-    if (value == NULL) {
+    if (!found) {
         return 0;
     }
 
-    return *value;
+    return DATA_LOCATION_TO_VALUE(data + valueOffset + SOF_VALUE_LEN + DATA_LOCATION_TO_US(data + valueOffset));
 }
 
 template <typename ValueType>
@@ -313,10 +316,11 @@ void TrieLeaf<ValueType>::add(const DatabaseKey &key, int firstCharacterIdx, Val
 template <typename ValueType>
 void TrieLeaf<ValueType>::update(const DatabaseKey &key, int firstCharacterIdx, ValueType value)
 {
-    ValueType *storedValue = findKeyValue(key, firstCharacterIdx);
+    bool found = false;
+    unsigned short valueOffset = mapFindKeyValue(found, key, firstCharacterIdx);
 
-    if (storedValue != NULL) {
-        *storedValue = value;
+    if (found) {
+        DATA_LOCATION_TO_VALUE(data + valueOffset + SOF_VALUE_LEN + DATA_LOCATION_TO_US(data + valueOffset)) = value;
     }
 }
 
