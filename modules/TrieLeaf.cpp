@@ -61,10 +61,6 @@ struct MapElem
 #define LEAF_USED_SIZE \
     (DATA_LOCATION_TO_US(DATA_END - SOF_USED_SIZE) + SOF_MAP_COUNT + SOF_USED_SIZE)
 
-/* below doesnt work */
-#define OTHER_LEAF_USED_SIZE(leaf_ptr) \
-    (DATA_LOCATION_TO_US(leaf_ptr->data + sizeof(leaf_ptr->data) - SOF_USED_SIZE) + SOF_USED_SIZE)
-
 #define DATA_AFTER_LEAF_USED_SIZE        (data + sizeof(unsigned long))
 
 #define MAP_COUNT \
@@ -347,7 +343,6 @@ void TrieLeaf<ValueType>::remove(const DatabaseKey &key, int firstCharacterIdx)
         unsigned long currentSlotSize = SOF_VALUE_LEN + DATA_LOCATION_TO_US(currentLoc) + sizeof(ValueType);
 
         unsigned short hashed = hash(currentLoc + SOF_VALUE_LEN, DATA_LOCATION_TO_US(currentLoc));
-
         mapUpdate(hashed, currentOffset, currentOffset - deletedSlotSize);
 
         memmove(currentLoc - deletedSlotSize, currentLoc, currentSlotSize);
@@ -417,26 +412,32 @@ unsigned char TrieLeaf<ValueType>::findBestSplitPoint(unsigned char leftmostPoin
     unsigned short sizesPerFirstCharacter[256];
     memset(sizesPerFirstCharacter, 0, sizeof(sizesPerFirstCharacter));
 
+    /* At first, we want to assign a weight to every character.
+     * Such weight is the number of bytes in keys which start with a given character.
+     */
+
     while (currentLoc < FREE_SPACE_START) {
         unsigned short currentSlotSize = SOF_VALUE_LEN + DATA_LOCATION_TO_US(currentLoc) + sizeof(ValueType);
 
         assert(DATA_LOCATION_TO_US(currentLoc) != 0); /* We can't get first character of an empty string. */
 
         sizesPerFirstCharacter[*(currentLoc + SOF_VALUE_LEN)] += currentSlotSize;
-
         currentLoc += currentSlotSize;
     }
 
+    /* We've gathered some statistics, now we want to guess a character which
+     * would evenly split this leaf (a split is always based on the first characters
+     * of keys).
+     */
+
     unsigned short currentAccumulatedSizes = 0;
     unsigned short leafWithoutHeaderSize = FREE_SPACE_OFFSET;
-
     int potentialSplitPoint;
 
     for (potentialSplitPoint = leftmostPoint; potentialSplitPoint <= rightmostPoint; potentialSplitPoint++) {
         /* We loop with int and then cast, to avoid uchar overflow causing infinite loop */
         if ((sizesPerFirstCharacter[potentialSplitPoint] + currentAccumulatedSizes) >= (leafWithoutHeaderSize / 2)) {
             if (currentAccumulatedSizes > 0) {
-                //return (unsigned char) i;
                 break;
             } else {
                 /* First character with more than zero occurrences happens to overwhelm the leaf node.

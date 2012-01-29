@@ -69,7 +69,7 @@ unsigned long BinFileMap::fetchEmptyBin() {
      */
     *getOffsetLoc(result / 8) |= (1 << (result % 8));
 
-    cerr << this << ": new empty bin " << result << endl;
+    //cerr << this << ": new empty bin " << result << endl;
 
     return result;
 }

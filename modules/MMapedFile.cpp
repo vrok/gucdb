@@ -57,7 +57,7 @@ bool MMapedFile::extendFileAndMmapingToSize(size_t newSize) {
     fileMmaps[mmaped_size] = (char*) mmapStart;
     mmaped_size = newSize;
 
-    cerr << "RE MMAPED FILE " << this << " : " << mmapStart << " - " << (void*)((char*)mmapStart + newMmapingSize) << endl;
+    //cerr << "RE MMAPED FILE " << this << " : " << mmapStart << " - " << (void*)((char*)mmapStart + newMmapingSize) << endl;
 }
 
 char* MMapedFile::getOffsetLoc(off_t offset) const {

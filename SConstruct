@@ -20,7 +20,7 @@ GMOCK_DIR = 'test/gmock-1.6.0/'
 modules_full = ['modules/%s' % x for x in modules]
 
 env = Environment()
-env['CCFLAGS'] = '-ggdb'
+env['CCFLAGS'] = '-ggdb -O2'
 
 env.StaticLibrary(target='modules_lib', source=modules_full)
 
