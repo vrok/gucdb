@@ -416,25 +416,24 @@ void TrieLeaf<ValueType>::moveAllBelowToAnotherLeaf(const DatabaseKey &key,
 template <typename ValueType>
 unsigned char TrieLeaf<ValueType>::findBestSplitPoint(unsigned char leftmostPoint, unsigned char rightmostPoint)
 {
-    unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
-    unsigned long sizesPerFirstCharacter[256];
+    unsigned char *currentLoc = data;
+    unsigned short sizesPerFirstCharacter[256];
     memset(sizesPerFirstCharacter, 0, sizeof(sizesPerFirstCharacter));
 
-    while (currentLoc < (data + LEAF_USED_SIZE)) {
-        unsigned long currentSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(ValueType);
+    while (currentLoc < FREE_SPACE_START) {
+        unsigned short currentSlotSize = SOF_VALUE_LEN + DATA_LOCATION_TO_US(currentLoc) + sizeof(ValueType);
 
-        assert(DATA_LOCATION_TO_UL(currentLoc) != 0); /* We can't get first character of an empty string. */
+        assert(DATA_LOCATION_TO_US(currentLoc) != 0); /* We can't get first character of an empty string. */
 
-        sizesPerFirstCharacter[*(currentLoc + sizeof(unsigned long))] += currentSlotSize;
+        sizesPerFirstCharacter[*(currentLoc + SOF_VALUE_LEN)] += currentSlotSize;
 
         currentLoc += currentSlotSize;
     }
 
-    unsigned long currentAccumulatedSizes = 0;
-    unsigned long leafWithoutHeaderSize = LEAF_USED_SIZE - sizeof(unsigned long);
+    unsigned short currentAccumulatedSizes = 0;
+    unsigned short leafWithoutHeaderSize = FREE_SPACE_OFFSET;
 
     int potentialSplitPoint;
-
 
     for (potentialSplitPoint = leftmostPoint; potentialSplitPoint <= rightmostPoint; potentialSplitPoint++) {
         /* We loop with int and then cast, to avoid uchar overflow causing infinite loop */

@@ -280,7 +280,6 @@ TEST_F(TrieLeafTest, TestBulkMoveToAnother)
     }
 }
 
-#if 0
 TEST_F(TrieLeafTest, TestFindBestSplit)
 {
     for (int i = 100; i <= 900; i += 100) {
@@ -378,6 +377,7 @@ TEST_F(TrieLeafTest, TestIsEmpty)
     ASSERT_FALSE(leaf.isEmpty());
 }
 
+#if 0
 TEST_F(TrieLeafTest, TestStripOneLeadingCharacter)
 {
     string key_data("test");
