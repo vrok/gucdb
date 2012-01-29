@@ -33,10 +33,10 @@ private:
     void addBulk(unsigned char *source, unsigned long length);
     int compareKeys(unsigned char *currentCharacter, unsigned char *endCharacter, const DatabaseKey &key, int firstCharacterIdx);
 
-    void mapAdd(const DatabaseKey &key, int firstCharacterIdx, unsigned short valueOffset);
+    void mapAdd(unsigned short hashed, unsigned short valueOffset);
     unsigned short mapGet(bool &found, int iteration, unsigned short hashed);
     MapElem *mapFindElem(const MapElem &elem);
-    void mapRemove(const DatabaseKey &key, int firstCharacterIdx, unsigned short valueOffset);
+    void mapRemove(unsigned short hashed, unsigned short valueOffset);
     void mapUpdate(unsigned short hashed, unsigned short currentValueOffset, unsigned short newValueOffset);
 
     unsigned short mapFindKeyValue(bool &found, const DatabaseKey &key, int firstCharacterIdx);

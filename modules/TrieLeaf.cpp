@@ -99,10 +99,8 @@ static unsigned short hash(const DatabaseKey &key, int firstCharacterIdx)
 }
 
 template <typename ValueType>
-void TrieLeaf<ValueType>::mapAdd(const DatabaseKey &key, int firstCharacterIdx, unsigned short valueOffset)
+void TrieLeaf<ValueType>::mapAdd(unsigned short hashed, unsigned short valueOffset)
 {
-    unsigned short hashed = hash(key, firstCharacterIdx);
-
     MapElem *currentFit = MAP_BEGIN - 1;
 
     for (MapElem *elem = MAP_BEGIN; elem < MAP_END; elem++) {
@@ -170,10 +168,8 @@ MapElem *TrieLeaf<ValueType>::mapFindElem(const MapElem &elem)
 }
 
 template <typename ValueType>
-void TrieLeaf<ValueType>::mapRemove(const DatabaseKey &key, int firstCharacterIdx, unsigned short valueOffset)
+void TrieLeaf<ValueType>::mapRemove(unsigned short hashed, unsigned short valueOffset)
 {
-    unsigned short hashed = hash(key, firstCharacterIdx);
-
     MapElem comparator;
     comparator.hashedValue = hashed;
     comparator.valueOffset = valueOffset;
@@ -247,14 +243,16 @@ unsigned short TrieLeaf<ValueType>::mapFindKeyValue(bool &found, const DatabaseK
     } while (compare != 0);
 
     return valueOffset;
-    //return & DATA_LOCATION_TO_VALUE(data + valueOffset + SOF_VALUE_LEN + DATA_LOCATION_TO_US(data + valueOffset));
 }
 
 template <typename ValueType>
 void TrieLeaf<ValueType>::addBulk(unsigned char *source, unsigned long length)
 {
-    memcpy(data + LEAF_USED_SIZE, source, length);
-    DATA_LOCATION_TO_UL(data) += length;
+    memcpy(FREE_SPACE_START, source, length);
+    unsigned short hashed = hash(FREE_SPACE_START + SOF_VALUE_LEN, length - SOF_VALUE_LEN - sizeof(ValueType));
+    mapAdd(hashed, FREE_SPACE_OFFSET);
+
+    DATA_LOCATION_TO_US(DATA_END - SOF_USED_SIZE) += length + SOF_MAP_ELEM;
 }
 
 template <typename ValueType>
@@ -312,7 +310,8 @@ void TrieLeaf<ValueType>::add(const DatabaseKey &key, int firstCharacterIdx, Val
 
     DATA_LOCATION_TO_VALUE(FREE_SPACE_START + SOF_VALUE_LEN + activeKeyLength) = value;
 
-    mapAdd(key, firstCharacterIdx, FREE_SPACE_OFFSET);
+    unsigned short hashed = hash(key, firstCharacterIdx);
+    mapAdd(hashed, FREE_SPACE_OFFSET);
 
     DATA_LOCATION_TO_US(DATA_END - SOF_USED_SIZE) += SOF_VALUE_LEN + activeKeyLength + sizeof(ValueType) + SOF_MAP_ELEM;
 }
@@ -332,18 +331,17 @@ template <typename ValueType>
 void TrieLeaf<ValueType>::remove(const DatabaseKey &key, int firstCharacterIdx)
 {
     bool found = false;
-
     unsigned short offset = mapFindKeyValue(found, key, firstCharacterIdx);
 
     if (! found) {
         return;
     }
 
-    mapRemove(key, firstCharacterIdx, offset);
+    unsigned short hashed = hash(key, firstCharacterIdx);
+    mapRemove(hashed, offset);
     DATA_LOCATION_TO_US(DATA_END - SOF_USED_SIZE) -= SOF_MAP_ELEM;
 
     unsigned short deletedSlotSize = SOF_VALUE_LEN + DATA_LOCATION_TO_US(data + offset) + sizeof(ValueType);
-
     unsigned short currentOffset = offset + deletedSlotSize;
 
     while (currentOffset < FREE_SPACE_OFFSET) {
@@ -364,8 +362,8 @@ void TrieLeaf<ValueType>::remove(const DatabaseKey &key, int firstCharacterIdx)
 template <typename ValueType>
 bool TrieLeaf<ValueType>::isEmpty()
 {
-    /* Empty node only stores its size in first few bytes. */
-    return LEAF_USED_SIZE == sizeof(unsigned long);
+    /* Empty node only stores its size and size of its internal map. */
+    return LEAF_USED_SIZE == (SOF_MAP_COUNT + SOF_USED_SIZE);
 }
 
 template <typename ValueType>
@@ -373,37 +371,46 @@ bool TrieLeaf<ValueType>::canFit(const DatabaseKey &key, int firstCharacterIdx)
 {
     return (key.length - firstCharacterIdx + SOF_VALUE_LEN + sizeof(ValueType) + SOF_MAP_ELEM)
             <= (sizeof(data) - LEAF_USED_SIZE);
-    //return (key.length - firstCharacterIdx + sizeof(unsigned int) + sizeof(ValueType)) <= (sizeof(data) - LEAF_USED_SIZE);
 }
 
 template <typename ValueType>
 void TrieLeaf<ValueType>::moveAllBelowToAnotherLeaf(const DatabaseKey &key,
         int firstCharacterIdx, TrieLeaf<ValueType> &anotherLeaf)
 {
-    unsigned char *currentLoc = DATA_AFTER_LEAF_USED_SIZE;
+    //unsigned char *currentLoc = data;
+    unsigned short currentOffset = 0;
     unsigned long shift = 0;
 
-    while (currentLoc < (data + LEAF_USED_SIZE)) {
-        unsigned long currentSlotSize = sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc) + sizeof(ValueType);
+    while (currentOffset < FREE_SPACE_OFFSET) {
+        unsigned char *currentLoc = data + currentOffset;
+        unsigned long currentSlotSize = SOF_VALUE_LEN + DATA_LOCATION_TO_US(currentLoc) + sizeof(ValueType);
 
-        int strCompare = compareKeys(currentLoc + sizeof(unsigned long),
-                                     currentLoc + sizeof(unsigned long) + DATA_LOCATION_TO_UL(currentLoc),
+        int strCompare = compareKeys(currentLoc + SOF_VALUE_LEN,
+                                     currentLoc + SOF_VALUE_LEN + DATA_LOCATION_TO_US(currentLoc),
                                      key,
                                      firstCharacterIdx);
 
         if (strCompare > 0) {
             anotherLeaf.addBulk(currentLoc, currentSlotSize);
+
+            unsigned short hashed = hash(currentLoc + SOF_VALUE_LEN, DATA_LOCATION_TO_US(currentLoc));
+            mapRemove(hashed, currentOffset);
+            DATA_LOCATION_TO_US(DATA_END - SOF_USED_SIZE) -= SOF_MAP_ELEM;
+
             shift += currentSlotSize;
         } else {
             if (shift > 0) {
                 memmove(currentLoc - shift, currentLoc, currentSlotSize);
+
+                unsigned short hashed = hash(currentLoc + SOF_VALUE_LEN, DATA_LOCATION_TO_US(currentLoc));
+                mapUpdate(hashed, currentOffset, currentOffset - shift);
             }
         }
 
-        currentLoc += currentSlotSize;
+        currentOffset += currentSlotSize;
     }
 
-    DATA_LOCATION_TO_UL(data) -= shift;
+    DATA_LOCATION_TO_US(DATA_END - SOF_USED_SIZE) -= shift;
 }
 
 template <typename ValueType>

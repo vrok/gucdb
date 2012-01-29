@@ -122,6 +122,7 @@ TEST_F(TrieLeafTest, TestRemove)
     leaf.remove(key, 0);
 
     ASSERT_EQ(0, leaf.get(key, 0));
+    ASSERT_TRUE(leaf.isEmpty());
 }
 
 TEST_F(TrieLeafTest, TestRemoveTwo)
@@ -168,7 +169,6 @@ TEST_F(TrieLeafTest, TestEmptyKey)
     ASSERT_EQ(2357, leaf.get(key, 0));
 }
 
-#if 0
 TEST_F(TrieLeafTest, TestMoveToAnother)
 {
     Db::DatabaseKey key1, key2;
@@ -280,6 +280,7 @@ TEST_F(TrieLeafTest, TestBulkMoveToAnother)
     }
 }
 
+#if 0
 TEST_F(TrieLeafTest, TestFindBestSplit)
 {
     for (int i = 100; i <= 900; i += 100) {
