@@ -42,23 +42,13 @@ void Slabs::initialize()
 
             SlabInfo *slabInfo = slabsInfo->getBin(slabId);
 
-            SlabIdAndFreeObjectsList *newSlab = new SlabIdAndFreeObjectsList;
-            newSlab->first = slabId;
-            newSlab->second.reserve(SLAB_SIZE / slabInfo->slabObjectSize);
-
             for (unsigned long currentByte = 0; currentByte <= slabInfo->slabObjectSize / 8; currentByte++) {
                 for (int currentBit = 1; currentBit <= 8; currentBit++) {
                     if (0 == ((1 << currentBit) & slabInfo->slabObjectsMap[currentByte])) {
-                        newSlab->second.push_back((currentByte * 8) + currentBit);
+                        slabClasses[getSuitableClass(slabInfo->slabObjectSize)]
+                                    .push_back(ObjectID(slabId, (currentByte * 8) + currentBit));
                     }
                 }
-            }
-
-            if (newSlab->second.empty()) {
-                /* No empty places within this slab were found => this slab is full. */
-                slabClasses[getSuitableClass(slabInfo->slabObjectSize)].slabsFull.push_back(newSlab);
-            } else {
-                slabClasses[getSuitableClass(slabInfo->slabObjectSize)].slabsPartial.push_back(newSlab);
             }
         }
     }
@@ -151,18 +141,11 @@ unsigned long long Slabs::createNewSlab(int classId)
 
 	unsigned long maxNumOfObjectsInSlab = SLAB_SIZE / getSizeOfClass(classId);
 
-	SlabIdAndFreeObjectsList *slabPair = new SlabIdAndFreeObjectsList;
-	slabPair->first = newSlabId;
-	slabPair->second.reserve(maxNumOfObjectsInSlab);
-
 	for (unsigned long slabInnerID = 0; slabInnerID < maxNumOfObjectsInSlab; slabInnerID++) {
-	    slabPair->second.push_back(slabInnerID);
+	    slabsClass.push_back(ObjectID(newSlabId, slabInnerID));
 	}
 
-	slabsClass.slabsPartial.push_back(slabPair);
-
 	cerr << "Created new slab " << newSlabId << endl;
-
 	return newSlabId;
 }
 
@@ -176,24 +159,18 @@ ObjectID Slabs::saveData(const char *source, size_t size)
     char extraDataContainingObjectSize[sizeof(uint32_t)];
     size_t sizeOfExtraData = computeObjectHeader(extraDataContainingObjectSize, size);
 	size_t spaceRequiredForNewData = size + sizeOfExtraData;
-	int classId = getSuitableClass(spaceRequiredForNewData);
+	int classID = getSuitableClass(spaceRequiredForNewData);
 
-    SlabsClass &slabClass = slabClasses[classId];
+    SlabsClass &slabClass = slabClasses[classID];
 
-    if (slabClass.slabsPartial.empty()) {
-        createNewSlab(classId);
+    if (slabClass.empty()) {
+        createNewSlab(classID);
     }
 
-    SlabIdAndFreeObjectsList *slabPair = slabClass.slabsPartial.back();
-    unsigned long long slabID = slabPair->first;
-    unsigned long innerSlabID = slabPair->second.back();
-    slabPair->second.pop_back();
-
-    if (slabPair->second.empty()) {
-        /* Slab is full, move it from vector with partially filled slabs. */
-        slabClass.slabsPartial.pop_back();
-        slabClass.slabsFull.push_back(slabPair);
-    }
+    ObjectID objectID = slabClass.back();
+    slabClass.pop_back();
+    unsigned long long slabID = objectID.slabID;
+    unsigned long innerSlabID = objectID.slabInnerID;
 
     Slab *targetSlab = slabs->getBin(slabID);
     SlabInfo *targetSlabInfo = slabsInfo->getBin(slabID);
@@ -236,7 +213,7 @@ void Slabs::dumpSlabInfo(ostream &where, unsigned long long slabID)
 } /* namespace Db */
 
 
-//#define TEST_SLABS
+#define TEST_SLABS
 #ifdef TEST_SLABS
 
 using namespace Db;

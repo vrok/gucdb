@@ -23,7 +23,6 @@ using namespace std;
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <sys/mman.h>
 #include <errno.h>
 
 namespace Db {
@@ -120,9 +119,7 @@ template<typename ValueType>
 void Trie<ValueType>::addKey(const DatabaseKey &key, ValueType value)
 {
     int currentCharIdx = 0;
-
-    TrieNode<ValueType> *currentNode = nodes->getBin(0); // root node always has id = 0
-    //TriePointer *currentPointer = &currentNode->children[key.data[currentCharIdx]];
+    TrieNode<ValueType> *currentNode = nodes->getBin(0); /* Root node always has id = 0 */
 
     while (true) {
         bool isLinkPure = currentNode->isLinkPure(key.data[currentCharIdx]);
@@ -146,7 +143,6 @@ void Trie<ValueType>::addKey(const DatabaseKey &key, ValueType value)
         if (currentPointer->leaf == 0) {
             currentCharIdx++;
             currentNode = nodes->getBin(currentPointer->link);
-            //currentPointer = &currentNode->children[key.data[currentCharIdx]];
 
             if (currentCharIdx == key.length) {
                 /* The whole word had been eaten, and we haven't reached any leaf
@@ -236,10 +232,10 @@ void Trie<ValueType>::addKey(const DatabaseKey &key, ValueType value)
 template<typename ValueType>
 void Trie<ValueType>::deleteKey(const DatabaseKey &key)
 {
-    /* We need to remember the nodes we visit, we need them in a later phase.
+    /* We need to remember the nodes we visit, because we need them in a later phase.
      * In case this turns out to be slow (it uses heap), one alternative
-     * that might be viable is doing this deletion recursively (we would
-     * just use stack then).
+     * that might be viable is doing this deletion recursively (we could
+     * just use stack then (but what about stack overflows?)).
      */
     vector<TrieNode<ValueType>*> path;
     path.reserve(10);
@@ -296,7 +292,7 @@ void Trie<ValueType>::deleteKey(const DatabaseKey &key)
             unsigned char leftmostCharWithCurrentLink = path[i]->checkLeftmostCharWithLink(key.data[i], currentLink);
             unsigned char rightmostCharWithCurrentLink = path[i]->checkRightmostCharWithLink(key.data[i], currentLink);
 
-            /* We could just fill pointers from the leftmost to the rightmost with zeros,
+            /* We could just fill pointers from the leftmost to the rightmost matched char with zeros,
              * but we want to maximally fill the leaves we have, so try to merge the pointers with
              * their neighbours.
              */

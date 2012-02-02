@@ -58,14 +58,7 @@ struct ObjectID
     unsigned long slabInnerID : 20;
 };
 
-typedef pair<unsigned long long, vector<unsigned long> > SlabIdAndFreeObjectsList;
-
-
-struct SlabsClass
-{
-    vector<SlabIdAndFreeObjectsList*> slabsFull;
-    vector<SlabIdAndFreeObjectsList*> slabsPartial;
-};
+typedef vector<ObjectID> SlabsClass;
 
 class Slabs
 {

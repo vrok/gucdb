@@ -5,7 +5,7 @@ import sys
 import os
 
 MAX_LEN = 512
-TEST_LEN = 100000
+TEST_LEN = 1000
 
 if len(sys.argv) != 3:
     print 'Usage test_slabs.py DB_BINARY TEMPORARY_DIR'
