@@ -180,12 +180,13 @@ ObjectID Slabs::saveData(const char *source, size_t size)
     memcpy(targetLocation, extraDataContainingObjectSize, sizeOfExtraData);
     memcpy(targetLocation + sizeOfExtraData, source, size);
 
+    targetSlabInfo->allocated += targetSlabInfo->slabObjectSize;
+
     return ObjectID(slabID, innerSlabID);
 }
 
 size_t Slabs::readData(char *&source, ObjectID objectID)
 {
-    assert(slabs->isBinIDSafeAndAllocated(objectID.slabID));
     assert(slabs->isBinIDSafeAndAllocated(objectID.slabID));
 
     Slab *sourceSlab = slabs->getBin(objectID.slabID);
@@ -197,6 +198,29 @@ size_t Slabs::readData(char *&source, ObjectID objectID)
 
     source = rawData;
     return dataSize;
+}
+
+void Slabs::removeData(ObjectID objectID)
+{
+    assert(slabs->isBinIDSafeAndAllocated(objectID.slabID));
+
+    unsigned long long slabID = objectID.slabID;
+    unsigned long innerSlabID = objectID.slabInnerID;
+
+    SlabInfo *slabInfo = slabsInfo->getBin(slabID);
+    Slab *slab = slabs->getBin(slabID);
+
+    slabInfo->allocated -= slabInfo->slabObjectSize;
+    slabInfo->slabObjectsMap[innerSlabID / 8] &= ~(1 << (innerSlabID % 8));
+
+    char *rawData = slab->data + (slabInfo->slabObjectSize * objectID.slabInnerID);
+    /* Erase the deallocated space. Logic of the application should prevent clients
+     * re-using this ObjectID from being able to access the old data, but if something
+     * should be removed, let's make it removed.
+     */
+    memset(rawData, 0, slabInfo->slabObjectSize);
+
+    slabClasses[getSuitableClass(slabInfo->slabObjectSize)].push_back(objectID);
 }
 
 void Slabs::dumpSlabInfo(ostream &where, unsigned long long slabID)
@@ -264,6 +288,15 @@ int main()
                 cout << result[i];
             }
 
+            cout << endl;
+        } else
+        if (command == "remove") {
+            uint64_t oidAsUInt;
+            cin >> oidAsUInt;
+
+            ObjectID oid(oidAsUInt);
+
+            slabs->removeData(oid);
             cout << endl;
         } else
         if (command == "exit") {

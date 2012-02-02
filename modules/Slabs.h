@@ -41,7 +41,6 @@ struct ObjectID
     ObjectID(unsigned long long slabID, unsigned long slabInnerID)
         : slabID(slabID), slabInnerID(slabInnerID) {}
 
-
     ObjectID() {}
 
     ObjectID(uint64_t intRepr)
@@ -83,6 +82,7 @@ public:
 
     ObjectID saveData(const char *source, size_t size);
     size_t readData(char *&source, ObjectID objectID);
+    void removeData(ObjectID objectID);
 
     void dumpSlabInfo(ostream &where, unsigned long long slabID);
 };
@@ -95,6 +95,7 @@ struct Slab
 struct SlabInfo
 {
     size_t slabObjectSize;
+    size_t allocated;
 
     /* Theoretically, each Slab Class has distinct needs for its free objects map.
      * But we want to store these maps in a BinFile, thus we need to put them in
@@ -107,7 +108,8 @@ struct SlabInfo
     /* Every type stored using BinFile has to be properly padded. See asserts
      * in BinFile constructor for details.
      */
-    char someDataJustToMakeStructNicelyPadded[TYPICAL_PAGE_SIZE - ((sizeof(size_t) + (SLAB_SIZE / SLAB_START_OBJECT_SIZE)) % TYPICAL_PAGE_SIZE)];
+    char someDataJustToMakeStructNicelyPadded[TYPICAL_PAGE_SIZE - ((2 * sizeof(size_t)
+            + (SLAB_SIZE / SLAB_START_OBJECT_SIZE)) % TYPICAL_PAGE_SIZE)];
 };
 
 } /* namespace Db */
