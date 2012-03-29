@@ -43,7 +43,7 @@ void Slabs::initialize()
             SlabInfo *slabInfo = slabsInfo->getBin(slabId);
 
             for (unsigned long currentByte = 0; currentByte <= slabInfo->slabObjectSize / 8; currentByte++) {
-                for (int currentBit = 1; currentBit <= 8; currentBit++) {
+                for (int currentBit = 0; currentBit < 8; currentBit++) {
                     if (0 == ((1 << currentBit) & slabInfo->slabObjectsMap[currentByte])) {
                         slabClasses[getSuitableClass(slabInfo->slabObjectSize)]
                                     .push_back(ObjectID(slabId, (currentByte * 8) + currentBit));
