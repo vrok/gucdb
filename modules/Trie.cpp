@@ -10,6 +10,7 @@
 #include "MMapedFile.h"
 #include "BinFile.h"
 #include "BinFileMap.h"
+#include "Slabs.h"
 
 #include "Trie.h"
 
@@ -391,6 +392,7 @@ void Trie<ValueType>::dump()
     cout << "</trie>" << endl;
 }
 
-template class Trie<unsigned long long>;
+//template class Trie<unsigned long long>;
+template class Trie<ObjectID>;
 
 } /* namespace Db */

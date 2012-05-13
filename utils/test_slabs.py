@@ -27,6 +27,8 @@ def print_and_run(command):
 
 print 'Generating input writes'
 
+copy = {}
+
 for i in xrange(TEST_LEN):
     test_len = random.randint(1, MAX_LEN)
     
@@ -36,6 +38,7 @@ for i in xrange(TEST_LEN):
     val = ''.join(chars)
 
     values.append(val)
+    copy[val] = 1
     input_lines.append('write %s' % val)
 
 input_lines.append('exit')

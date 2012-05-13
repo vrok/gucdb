@@ -30,6 +30,9 @@ private:
     friend class Trie<ValueType>;
     friend class TrieLeafNavigator<ValueType>;
 
+    TrieLeaf(const TrieLeaf &);             /* Non-copiable */
+    TrieLeaf & operator=(const TrieLeaf &); /* Non-copiable */
+
     unsigned char *find(const DatabaseKey &key, int firstCharacterIdx);
     void addBulk(unsigned char *source, unsigned long length);
     int compareKeys(unsigned char *currentCharacter, unsigned char *endCharacter, const DatabaseKey &key, int firstCharacterIdx);

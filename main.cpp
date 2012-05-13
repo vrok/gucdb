@@ -3,36 +3,47 @@
 using namespace std;
 
 #include "modules/Trie.h"
+#include "modules/Slabs.h"
 #include "modules/Database.h"
+#include "modules/DatabaseKey.h"
 
-#if 0
 int main(int argc, char *argv[])
 {
-    string cmd, key;
-    unsigned long long value;
+    string cmd, key, value;
+    //unsigned long long value;
     Db::Database dbInstance("/tmp/");
     unsigned long long counter = 0;
+    Db::DatabaseKey dbKey;
+    //Db::Value dbValue;
+
     while (1) {
         if (counter++ == 2286) {
             //cout << counter << endl;
         }
-        //cout << "> ";
+        cout << "> ";
         cout.flush();
         cin >> cmd;
         if (cmd == "read") {
             cin >> key;
-            cout << dbInstance.read(key.c_str()) << endl;
+            //cin >> value;
+            dbKey = key;
+            cout << dbInstance.read(dbKey) << endl;
             //dbInstance.read(key.c_str());
         } else
         if (cmd == "write") {
             cin >> key >> value;
-            cout << dbInstance.write(key.c_str(), value) << endl;
-            dbInstance.write(key.c_str(), value);
+
+            dbKey = key;
+            Db::Value dbValue(value);
+
+            cout << dbInstance.write(dbKey, dbValue) << endl;
+            //dbInstance.write(key.c_str(), value);
         } else
         if (cmd == "remove") {
             cin >> key;
-            cout << dbInstance.remove(key.c_str()) << endl;
-            dbInstance.remove(key.c_str());
+            dbKey = key;
+            cout << dbInstance.remove(dbKey) << endl;
+            //dbInstance.remove(key.c_str());
         } else
         if (cmd == "dump") {
             dbInstance.dump();
@@ -45,5 +56,4 @@ int main(int argc, char *argv[])
     }
 	return 0;
 }
-#endif
 

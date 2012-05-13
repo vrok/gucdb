@@ -8,6 +8,7 @@
 #include "Trie.h"
 
 #include "TrieLeaf.h"
+#include "Slabs.h"
 
 #include <cassert>
 #include <cstring>
@@ -541,8 +542,12 @@ bool TrieLeafNavigator<ValueType>::isEnd() {
     return currentLoc >= context->getFreeMemStart();
 }
 
-template class TrieLeaf<unsigned long long>;
-template class TrieLeafNavigator<unsigned long long>;
+//template class TrieLeaf<unsigned long long>;
+//template class TrieLeafNavigator<unsigned long long>;
+
+template class TrieLeaf<ObjectID>;
+template class TrieLeafNavigator<ObjectID>;
+
 
 }
 

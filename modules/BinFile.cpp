@@ -131,8 +131,8 @@ const BinFileMap & BinFile<BinType>::getBinFileMap() {
     return *binFileMap;
 }
 
-template class BinFile<TrieNode<ValueAddress> >;
-template class BinFile<TrieLeaf<ValueAddress> >;
+template class BinFile<TrieNode<ObjectID> >;
+template class BinFile<TrieLeaf<ObjectID> >;
 template class BinFile<SlabInfo>;
 template class BinFile<Slab>;
 

@@ -23,6 +23,9 @@ namespace Db {
 template <typename ValueType>
 class Trie {
 private:
+    Trie(const Trie &);             /* Non-copiable */
+    Trie & operator=(const Trie &); /* Non-copiable */
+
     BinFile<TrieNode<ValueType> > *nodes;
     BinFile<TrieLeaf<ValueType> > *leaves;
 

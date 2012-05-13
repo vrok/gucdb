@@ -7,6 +7,8 @@
 
 #include "TrieNode.h"
 
+#include "Slabs.h"
+
 #include <cstdlib>
 #include <cstring>
 #include <cassert>
@@ -96,6 +98,8 @@ bool TrieNode<ValueType>::isPointerTheOnlyNonNullField(const TriePointer &childP
     return true;
 }
 
-template class TrieNode<unsigned long long>;
+//template class TrieNode<unsigned long long>;
+
+template class TrieNode<ObjectID>;
 
 } /* namespace Db */

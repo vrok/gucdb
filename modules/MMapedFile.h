@@ -15,6 +15,9 @@
 namespace Db {
 
 class MMapedFile {
+private:
+    MMapedFile & operator=(const MMapedFile &); /* Non-copiable */
+
 protected:
     int fd;
     size_t mmaped_size;

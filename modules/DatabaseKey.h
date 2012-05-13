@@ -8,6 +8,10 @@
 #ifndef DATABASEKEY_H_
 #define DATABASEKEY_H_
 
+#include <string>
+#include <cassert>
+#include <cstring>
+
 namespace Db {
 
 class DatabaseKey {
@@ -17,6 +21,13 @@ public:
 
     DatabaseKey();
     ~DatabaseKey();
+
+    DatabaseKey * operator=(const std::string & str) {
+        assert(str.length() <= sizeof(data));
+
+        memcpy(data, str.c_str(), str.length());
+        length = str.length();
+    }
 };
 
 } /* namespace Db */

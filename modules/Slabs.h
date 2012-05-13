@@ -68,6 +68,9 @@ private:
 	unsigned long long createNewSlab(int classId);
 	char *getLocationInSlabByInnerID(Slab &slab, SlabInfo &slabInfo, unsigned long slabInnerID);
 
+	Slabs(const Slabs&);             /* Non-copiable */
+	Slabs & operator=(const Slabs&); /* Non-copiable */
+
 public:
     BinFile<Slab> *slabs;
     BinFile<SlabInfo> *slabsInfo;
