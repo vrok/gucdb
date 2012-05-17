@@ -24,7 +24,7 @@ env['CCFLAGS'] = '-ggdb -O2'
 
 env.StaticLibrary(target='modules_lib', source=modules_full)
 
-db_binary = env.Program(target='db', source=['main.cpp'], LIBS=['modules_lib', 'sqlite3'], LIBPATH='.')
+db_binary = env.Program(target='db', source=['main.cpp'], LIBS=['modules_lib', 'sqlite3', 'db_cxx-4.8'], LIBPATH='.')
 
 Default(db_binary)
 
