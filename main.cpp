@@ -85,6 +85,9 @@ public:
     }
 
     void remove(const string & key) {
+        sqlite3_reset(remove_stmt);
+        sqlite3_bind_text(remove_stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_step(remove_stmt);
     }
 };
 
