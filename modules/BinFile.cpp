@@ -50,10 +50,20 @@ MMapedFile::OpeningResult BinFile<BinType>::openMMapedFile() {
 
 template<typename BinType>
 void BinFile<BinType>::assureNewBinIsUsable(off_t binOffset) {
+    static size_t lastIncreaseSize = initialFileSize;
     if ((binOffset + sizeof(BinType)) >= mmaped_size) {
         //cerr << this << ": Bin not in range, expanding " << binOffset << endl;
-        extendFileAndMmapingToSize(mmaped_size + initialFileSize);
+        extendFileAndMmapingToSize(mmaped_size + lastIncreaseSize);
         assert((binOffset + sizeof(BinType)) < mmaped_size);
+
+        if (lastIncreaseSize < (initialFileSize * 128)) {
+            /* Double the size of the next mmapping (with a limit).
+             * Efficiency is a one reason, the other (probably more important)
+             * is that usually there's a limit to how many mmappings a process
+             * in a system can have. It could be easily hit during a large DB import, etc.
+             */
+            lastIncreaseSize *= 2;
+        }
     }
 }
 
