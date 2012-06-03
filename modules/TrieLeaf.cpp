@@ -83,9 +83,19 @@ struct MapElem
 
 static unsigned short hash(const unsigned char *data, size_t length)
 {
+    /* The bad hash below is useful for testing collision handling */
+#if 0
     unsigned short current = 0;
     for (size_t i = 0; i < length; i++) {
         current += (unsigned short) data[i];
+    }
+    return current;
+#endif
+
+    /* TODO: DJB's hash operates on 32-bit integer */
+    unsigned short current = 5381;
+    for (size_t i = 0; i < length; i++) {
+        current = ((current << 5) + current) + (unsigned short) data[i];
     }
     return current;
 }
