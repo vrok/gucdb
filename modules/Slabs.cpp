@@ -41,8 +41,9 @@ void Slabs::initialize()
             unsigned long long slabId = (*it).first;
 
             SlabInfo *slabInfo = slabsInfo->getBin(slabId);
+            unsigned long maxNumOfObjectsInSlab = SLAB_SIZE / slabInfo->slabObjectSize;
 
-            for (unsigned long currentByte = 0; currentByte <= slabInfo->slabObjectSize / 8; currentByte++) {
+            for (unsigned long currentByte = 0; currentByte <= maxNumOfObjectsInSlab / 8; currentByte++) {
                 for (int currentBit = 0; currentBit < 8; currentBit++) {
                     if (0 == ((1 << currentBit) & slabInfo->slabObjectsMap[currentByte])) {
                         slabClasses[getSuitableClass(slabInfo->slabObjectSize)]
@@ -145,7 +146,6 @@ unsigned long long Slabs::createNewSlab(int classId)
 	    slabsClass.push_back(ObjectID(newSlabId, slabInnerID));
 	}
 
-	cerr << "Created new slab " << newSlabId << endl;
 	return newSlabId;
 }
 
@@ -222,6 +222,41 @@ void Slabs::removeData(ObjectID objectID)
     memset(rawData, 0, slabInfo->slabObjectSize);
 
     slabClasses[getSuitableClass(slabInfo->slabObjectSize)].push_back(objectID);
+}
+
+void Slabs::dumpAllInfo(ostream &where)
+{
+    /* Loads information about current slab allocation. */
+
+    const BinFileMap &slabInfoMap = slabsInfo->getBinFileMap();
+
+    for (BinFileMap::Iterator it = slabInfoMap.getIterator(); it != slabInfoMap.end(); ++it) {
+        /* Check if it's a non-empty bin (slab). */
+        if ((*it).second) {
+            unsigned long long slabId = (*it).first;
+
+            SlabInfo *slabInfo = slabsInfo->getBin(slabId);
+
+            if (! slabs->isBinIDSafeAndAllocated(slabId)) {
+                where << "Slab ID " << slabId << " is invalid or not used.";
+                continue;
+            }
+
+            //SlabInfo *slabInfo = slabsInfo->getBin(slabID);
+            where << "Size of this slab's class is " << slabInfo->slabObjectSize << endl;
+            where << "It allocated " << slabInfo->allocated << endl;
+#if 0
+            for (unsigned long currentByte = 0; currentByte <= slabInfo->slabObjectSize / 8; currentByte++) {
+                for (int currentBit = 0; currentBit < 8; currentBit++) {
+                    if (0 == ((1 << currentBit) & slabInfo->slabObjectsMap[currentByte])) {
+                        slabClasses[getSuitableClass(slabInfo->slabObjectSize)]
+                                    .push_back(ObjectID(slabId, (currentByte * 8) + currentBit));
+                    }
+                }
+            }
+#endif
+        }
+    }
 }
 
 void Slabs::dumpSlabInfo(ostream &where, unsigned long long slabID)

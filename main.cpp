@@ -3,42 +3,46 @@
 #include <cassert>
 using namespace std;
 
-//#include "modules/Trie.h"
-//#include "modules/Slabs.h"
-//#include "modules/Database.h"
-//#include "modules/DatabaseKey.h"
+#include "modules/Trie.h"
+#include "modules/Slabs.h"
+#include "modules/Database.h"
+#include "modules/DatabaseKey.h"
 
 #include <sqlite3.h>
-#include <db_cxx.h>
+//#include <db_cxx.h>
 
-//class Adapter
-//{
-//private:
-//    Db::Database dbInstance;
-//    Db::DatabaseKey dbKey;
-//
-//public:
-//
-//    Adapter() : dbInstance("/tmp/") {
-//    }
-//
-//    string read(const string & key) {
-//        dbKey = key;
-//        Db::Value val = dbInstance.read(dbKey);
-//        return string(val.data, val.dataSize);
-//    }
-//
-//    void write(const string & key, const string & value) {
-//        dbKey = key;
-//        Db::Value dbValue(value);
-//        dbInstance.write(dbKey, dbValue);
-//    }
-//
-//    void remove(const string & key) {
-//        dbKey = key;
-//        dbInstance.remove(dbKey);
-//    }
-//};
+class Adapter
+{
+private:
+    Db::Database dbInstance;
+    Db::DatabaseKey dbKey;
+
+public:
+
+    Adapter() : dbInstance("/tmp/") {
+    }
+
+    string read(const string & key) {
+        dbKey = key;
+        Db::Value val = dbInstance.read(dbKey);
+        return string(val.data, val.dataSize);
+    }
+
+    void write(const string & key, const string & value) {
+        dbKey = key;
+        Db::Value dbValue(value);
+        dbInstance.write(dbKey, dbValue);
+    }
+
+    void remove(const string & key) {
+        dbKey = key;
+        dbInstance.remove(dbKey);
+    }
+
+    void dump() {
+        dbInstance.dump();
+    }
+};
 
 class SQLiteAdapter
 {
@@ -50,18 +54,22 @@ private:
         cerr << "SQLite error: " << sqlite3_errmsg(db) << endl;
     }
 
+    void query(std::string q) {
+        sqlite3_stmt *create_stmt;
+        assert(SQLITE_OK == sqlite3_prepare(db, q.c_str(), -1, &create_stmt, NULL));
+        sqlite3_step(create_stmt);
+        assert(SQLITE_OK == sqlite3_finalize(create_stmt));
+    }
+
 public:
     SQLiteAdapter() {
         assert(SQLITE_OK == sqlite3_open("/tmp/main.sqlite", &db));
 
-        sqlite3_stmt *create_stmt;
-        assert(SQLITE_OK == sqlite3_prepare(db, "create table if not exists storage (k string, v string);", -1, &create_stmt, NULL));
-        sqlite3_step(create_stmt);
-        assert(SQLITE_OK == sqlite3_finalize(create_stmt));
-
-        assert(SQLITE_OK == sqlite3_prepare(db, "create index if not exists k_key on storage (k);", -1, &create_stmt, NULL));
-        sqlite3_step(create_stmt);
-        assert(SQLITE_OK == sqlite3_finalize(create_stmt));
+        query("create table if not exists storage (k string, v string);");
+        query("create index if not exists k_key on storage (k);");
+        query("PRAGMA synchronous = OFF;");
+        query("PRAGMA journal_mode = OFF;");
+        query("PRAGMA locking_mode = EXCLUSIVE;");
 
         assert(SQLITE_OK == sqlite3_prepare(db, "select v from storage where k = ?;", -1, &read_stmt, NULL));
         assert(SQLITE_OK == sqlite3_prepare(db, "insert into storage (k, v) values (?, ?);", -1, &write_stmt, NULL));
@@ -92,46 +100,46 @@ public:
     }
 };
 
-class BDBAdapter
-{
-private:
-    Db db;
-    char tmpValue[1024];
-
-public:
-
-    BDBAdapter() : db(NULL, 0) {
-        try {
-            db.open(NULL, "/tmp/main.bdb", NULL, DB_BTREE, DB_CREATE, 0);               
-        } catch(DbException &e) {
-            cerr << "DbException" << endl;
-        } catch(std::exception &e) {
-            cerr << "std::exception" << endl;
-        }
-    }
-
-    string read(const string & key) {
-        Dbt bKey((char*) key.c_str(), key.size());
-        Dbt bValue;
-        bValue.set_data(tmpValue);
-        bValue.set_ulen(sizeof(tmpValue));
-        bValue.set_flags(DB_DBT_USERMEM);
-
-        db.get(NULL, &bKey, &bValue, 0);
-        return string(tmpValue, bValue.get_size());
-    }
-
-    void write(const string & key, const string & value) {
-        Dbt bKey((char*) key.c_str(), key.size());
-        Dbt bValue((char*) value.c_str(), value.size());
-        db.put(NULL, &bKey, &bValue, 0); // DB_NOOVERWRITE
-    }
-
-    void remove(const string & key) {
-        Dbt bKey((char*) key.c_str(), key.size());
-        db.del(NULL, &bKey, 0);
-    }
-};
+//class BDBAdapter
+//{
+//private:
+//    Db db;
+//    char tmpValue[1024];
+//
+//public:
+//
+//    BDBAdapter() : db(NULL, 0) {
+//        try {
+//            db.open(NULL, "/tmp/main.bdb", NULL, DB_BTREE, DB_CREATE, 0);               
+//        } catch(DbException &e) {
+//            cerr << "DbException" << endl;
+//        } catch(std::exception &e) {
+//            cerr << "std::exception" << endl;
+//        }
+//    }
+//
+//    string read(const string & key) {
+//        Dbt bKey((char*) key.c_str(), key.size());
+//        Dbt bValue;
+//        bValue.set_data(tmpValue);
+//        bValue.set_ulen(sizeof(tmpValue));
+//        bValue.set_flags(DB_DBT_USERMEM);
+//
+//        db.get(NULL, &bKey, &bValue, 0);
+//        return string(tmpValue, bValue.get_size());
+//    }
+//
+//    void write(const string & key, const string & value) {
+//        Dbt bKey((char*) key.c_str(), key.size());
+//        Dbt bValue((char*) value.c_str(), value.size());
+//        db.put(NULL, &bKey, &bValue, 0); // DB_NOOVERWRITE
+//    }
+//
+//    void remove(const string & key) {
+//        Dbt bKey((char*) key.c_str(), key.size());
+//        db.del(NULL, &bKey, 0);
+//    }
+//};
 
 template<typename A>
 void dbLoop() {
@@ -156,6 +164,9 @@ void dbLoop() {
         } else
         if (cmd == "exit") {
             return;
+        } else
+        if (cmd == "dump") {
+            a.dump();
         } else {
             cerr << "Unknown command" << endl;
         }
@@ -165,8 +176,10 @@ void dbLoop() {
 
 int main(int argc, char *argv[])
 {
-    //dbLoop<Adapter>();
+    dbLoop<Adapter>();
     //dbLoop<SQLiteAdapter>();
-    dbLoop<BDBAdapter>();
+    //dbLoop<BDBAdapter>();
+
+    return 0;
 }
 

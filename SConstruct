@@ -20,11 +20,12 @@ GMOCK_DIR = 'test/gmock-1.6.0/'
 modules_full = ['modules/%s' % x for x in modules]
 
 env = Environment()
-env['CCFLAGS'] = '-ggdb -O2'
+#env['CCFLAGS'] = '-O2'
+env['CCFLAGS'] = '-ggdb'
 
 env.StaticLibrary(target='modules_lib', source=modules_full)
 
-db_binary = env.Program(target='db', source=['main.cpp'], LIBS=['modules_lib', 'sqlite3', 'db_cxx-4.8'], LIBPATH='.')
+db_binary = env.Program(target='db', source=['main.cpp'], LIBS=['modules_lib', 'sqlite3', 'db_cxx-5.1'], LIBPATH='.')
 
 Default(db_binary)
 

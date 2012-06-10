@@ -84,7 +84,8 @@ int Database::remove(const DatabaseKey &key)
 
 void Database::dump()
 {
-    mainIndex->dump();
+    //mainIndex->dump();
+    slabs->dumpAllInfo(cout);
 }
 
 } /* namespace Db */

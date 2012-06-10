@@ -27,6 +27,8 @@ struct MapElem;
 template <typename ValueType>
 class TrieLeaf {
 private:
+	friend class TrieLeafTest; /* Unit test */
+
     friend class Trie<ValueType>;
     friend class TrieLeafNavigator<ValueType>;
 
@@ -49,6 +51,8 @@ private:
 public:
     unsigned char data[2 * TYPICAL_PAGE_SIZE];
     //unsigned char data[90];
+
+    TrieLeaf() {}
 
     bool isEmpty();
     bool canFit(const DatabaseKey &key, int firstCharacterIdx);

@@ -87,6 +87,7 @@ public:
     size_t readData(char *&source, ObjectID objectID);
     void removeData(ObjectID objectID);
 
+    void dumpAllInfo(ostream &where);
     void dumpSlabInfo(ostream &where, unsigned long long slabID);
 };
 
