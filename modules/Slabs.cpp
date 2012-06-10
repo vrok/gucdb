@@ -181,6 +181,7 @@ ObjectID Slabs::saveData(const char *source, size_t size)
     memcpy(targetLocation + sizeOfExtraData, source, size);
 
     targetSlabInfo->allocated += targetSlabInfo->slabObjectSize;
+    targetSlabInfo->slabObjectsMap[innerSlabID / 8] |= 1 << (innerSlabID % 8);
 
     return ObjectID(slabID, innerSlabID);
 }
