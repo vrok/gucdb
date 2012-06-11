@@ -51,10 +51,10 @@ MMapedFile::OpeningResult BinFile<BinType>::openMMapedFile() {
 template<typename BinType>
 void BinFile<BinType>::assureNewBinIsUsable(off_t binOffset) {
     static size_t lastIncreaseSize = initialFileSize;
-    if ((binOffset + sizeof(BinType)) >= mmaped_size) {
+    if ((binOffset + sizeof(BinType)) > mmaped_size) {
         //cerr << this << ": Bin not in range, expanding " << binOffset << endl;
         extendFileAndMmapingToSize(mmaped_size + lastIncreaseSize);
-        assert((binOffset + sizeof(BinType)) < mmaped_size);
+        assert((binOffset + sizeof(BinType)) <= mmaped_size);
 
         if (lastIncreaseSize < (initialFileSize * 128)) {
             /* Double the size of the next mmapping (with a limit).
