@@ -19,6 +19,7 @@ using namespace std;
 
 #include "SystemParams.h"
 #include "BinFile.h"
+#include "BinFileAllocators.h"
 
 namespace Db {
 
@@ -93,11 +94,15 @@ public:
 
 struct Slab
 {
+    typedef LinearAllocator<Slab> AllocatorType;
+
     char data[SLAB_SIZE];
 };
 
 struct SlabInfo
 {
+    typedef LinearAllocator<SlabInfo> AllocatorType;
+
     size_t slabObjectSize;
     size_t allocated;
 

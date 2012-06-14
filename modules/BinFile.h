@@ -24,6 +24,8 @@ private:
 
     BinFileMap *binFileMap;
 
+    typename BinType::AllocatorType allocator;
+
 public: /* TODO: change to protected */
     unsigned long initialFileSize;
     string filename;

@@ -49,6 +49,8 @@ private:
     unsigned short mapFindKeyValue(bool &found, const DatabaseKey &key, int firstCharacterIdx);
 
 public:
+    typedef ExponentialAllocator<TrieLeaf<ValueType> > AllocatorType;
+
     unsigned char data[2 * TYPICAL_PAGE_SIZE];
     //unsigned char data[90];
 

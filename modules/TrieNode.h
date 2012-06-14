@@ -9,6 +9,7 @@
 #define TRIENODE_H_
 
 #include "TriePointer.h"
+#include "BinFileAllocators.h"
 
 namespace Db {
 
@@ -16,6 +17,8 @@ namespace Db {
 
 template<typename ValueType>
 struct TrieNode {
+    typedef ExponentialAllocator<TrieNode<ValueType> > AllocatorType;
+
     TriePointer children[NODE_SIZE];
 
     ValueType values[NODE_SIZE];

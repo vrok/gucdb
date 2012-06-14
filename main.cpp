@@ -168,7 +168,7 @@ void dbLoop() {
         if (cmd == "dump") {
             a.dump();
         } else {
-            cerr << "Unknown command" << endl;
+            cerr << "Unknown command: " << cmd << endl;
         }
     }
 }
