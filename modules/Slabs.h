@@ -53,6 +53,11 @@ struct ObjectID
         return (slabID << 20) | slabInnerID;
     }
 
+    friend bool operator==(const ObjectID a, const ObjectID b)
+    {
+        return (a.slabID == b.slabID) && (a.slabInnerID == b.slabInnerID);
+    }
+
     /* We'd like to sizeof(ObjectID) == 64 */
     unsigned long long slabID : 44;
     unsigned long slabInnerID : 20;

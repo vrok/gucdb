@@ -5,6 +5,7 @@ using namespace std;
 
 #include "TrieNode.h"
 #include "TriePointer.h"
+#include "Slabs.h"
 #include "gtest/gtest.h"
 
 namespace {
@@ -12,7 +13,7 @@ namespace {
 class TrieLeafTest: public ::testing::Test {
 protected:
 
-    Db::TrieNode<unsigned long long> node;
+    Db::TrieNode<Db::ObjectID> node;
 
     TrieLeafTest() {
     }

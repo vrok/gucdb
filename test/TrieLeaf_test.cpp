@@ -10,6 +10,8 @@
 #include <sstream>
 using namespace std;
 
+#include "BinFileAllocators.h"
+#include "Slabs.h"
 #include "TrieLeaf.h"
 #include "gtest/gtest.h"
 
@@ -18,7 +20,7 @@ namespace {
 class TrieLeafTest: public ::testing::Test {
 protected:
 
-    Db::TrieLeaf<unsigned long long> leaf;
+    Db::TrieLeaf<Db::ObjectID> leaf;
 
     TrieLeafTest() {
     }
@@ -42,7 +44,7 @@ TEST_F(TrieLeafTest, TestSimpleGetAddGet)
     memcpy((void*) key.data, (void*) key_data.c_str(), key_data.length());
     key.length = key_data.length();
 
-    ASSERT_EQ(0, leaf.get(key, 0));
+    ASSERT_EQ(Db::ObjectID(0), leaf.get(key, 0));
 
     leaf.add(key, 0, 2357);
 
@@ -187,7 +189,7 @@ TEST_F(TrieLeafTest, TestMoveToAnother)
     ASSERT_EQ(3000, leaf.get(key1, 0));
     ASSERT_EQ(5000, leaf.get(key2, 0));
 
-    Db::TrieLeaf<unsigned long long> anotherLeaf;
+    Db::TrieLeaf<Db::ObjectID> anotherLeaf;
     memset((void*) &anotherLeaf, 0, sizeof(anotherLeaf));
 
     Db::DatabaseKey dividing_key;
@@ -219,7 +221,7 @@ TEST_F(TrieLeafTest, TestMoveToAnotherDivideByExisting)
 
     ASSERT_EQ(3000, leaf.get(key, 0));
 
-    Db::TrieLeaf<unsigned long long> anotherLeaf;
+    Db::TrieLeaf<Db::ObjectID> anotherLeaf;
     memset((void*) &anotherLeaf, 0, sizeof(anotherLeaf));
 
     Db::DatabaseKey dividing_key;
@@ -249,7 +251,7 @@ TEST_F(TrieLeafTest, TestBulkMoveToAnother)
         leaf.add(key, 0, i);
     }
 
-    Db::TrieLeaf<unsigned long long> anotherLeaf;
+    Db::TrieLeaf<Db::ObjectID> anotherLeaf;
     memset((void*) &anotherLeaf, 0, sizeof(anotherLeaf));
 
     Db::DatabaseKey dividing_key;
