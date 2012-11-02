@@ -37,6 +37,56 @@ env.StaticLibrary(target='gtest_lib',
                   CPPPATH=['modules', GTEST_DIR, GTEST_DIR + 'include'],
                   LINKFLAGS=['-pthread'])
 
+
+class ComparativeTest:
+
+    def get_libs_list(self):
+        raise NotImplementedError()
+
+    def get_name(self):
+        raise NotImplementedError()
+
+
+class BDBComparativeTest:
+    
+    def get_libs_list(self):
+        return ['db_cxx-5.1']
+
+    def get_name(self):
+        return 'bdb'
+
+
+class SkoDBComparativeTest:
+    
+    def get_libs_list(self):
+        return ['modules_lib']
+
+    def get_name(self):
+        return 'skodb'
+
+
+class SQLiteComparativeTest:
+    
+    def get_libs_list(self):
+        return ['sqlite3']
+
+    def get_name(self):
+        return 'sqlite'
+
+
+comparative_tests = [BDBComparativeTest(), SQLiteComparativeTest(), SkoDBComparativeTest()]
+
+# Prepare comparative tests targets (i.e. 'bdb_compare_test', 'skodb_compare_test', 'sqlite_compare_test').
+# Such target actually builds a binary which later can be used to compare performance (etc.).
+for test in comparative_tests:
+    env.Program(target='%s_compare_test' % test.get_name(),
+                source=['test/comparative_tests/main_%s.cpp' % test.get_name()],
+                CPPPATH=['modules', 'test/comparative_tests'],
+                LINKFLAGS=['-pthread'],
+                LIBS=test.get_libs_list(), LIBPATH='.') 
+
+# Prepare unit tests targets (i.e. 'trie_leaf_test', 'trie_node_test').
+# Such target builds a binary which tests a single module.
 for module in modules:
 
     test_file_name = '%s/%s_test.cpp' % (TEST_DIR, module.rstrip('.cpp'))
