@@ -12,7 +12,7 @@ REPEATS = 2
 MEMORY_LABEL = 'Memory (MB)'
 
 files = [
-    'test_data/Wikipedia_titles',
+#    'test_data/Wikipedia_titles',
     'test_data/Length_from_150_to_200',
     'test_data/URLs',
     'test_data/Genome',
@@ -21,6 +21,9 @@ files = [
 
 #binaries = ['./binaries/BerkeleyDB', './binaries/SQLite', './binaries/Own']
 #binaries = ['./binaries/sqlite', './binaries/mgr_djb']
+
+def get_base_dir():
+    return os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 class Executable:
 
@@ -31,7 +34,7 @@ class Executable:
         raise NotImplementedError()
 
     def get_binary(self):
-        raise NotImplementedError('abstract method')
+        return '%s/%s_compare_test' % (get_base_dir(), self.get_name())
 
     def measure_disk_usage(self):
         #raise NotImplementedError('abstract method')
@@ -46,9 +49,6 @@ class BerkeleyDBExecutable(Executable):
     def __init__(self):
         self._db_files = ['/tmp/main.bdb']
 
-    def get_binary(self):
-        return './binaries/BerkeleyDB'
-
     def get_libs_list(self):
         return ['db_cxx-5.1']
 
@@ -60,9 +60,6 @@ class SQLiteExecutable(Executable):
 
     def __init__(self):
         self._db_files = ['/tmp/main.sqlite']
-
-    def get_binary(self):
-        return './binaries/SQLite'
 
     def get_libs_list(self):
         return ['sqlite3']
@@ -83,9 +80,6 @@ class OwnExecutable(Executable):
             '/tmp/main.slabinfos.map',
             '/tmp/main.slabs',
             '/tmp/main.slabs.map']
-
-    def get_binary(self):
-        return './binaries/Own'
 
     def get_libs_list(self):
         return ['modules_lib']
@@ -253,6 +247,14 @@ class ReadAfterAddRemoveAddTest(Test):
         return prep_file_read_sorted(filename, lines, output_file)
 
 
+def are_files_the_same(list_of_files):
+    prev_file = list_of_files[0]
+    for current_file in list_of_files[1:]:
+        if run_o(""" cmp %s %s """ % (prev_file, current_file)) != '':
+            return False
+        prev_file = current_file
+    return True
+
 prepare_functions = [
 #    (prep_file_exit, prep_file_add_sorted),
 #    (prep_file_exit, prep_file_add_random),
@@ -272,7 +274,7 @@ tests = [
 # binarka X rodzaj testu X rodzaj danych wej.
 collected_data = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list)))))
 
-def do_test(executable, test_kind, dataset_kind, granularity, preparator):
+def do_test(executable, test_kind, dataset_kind, granularity, preparator, output_file):
     #clear_indices()
 
     binary = executable.get_binary()
@@ -281,7 +283,7 @@ def do_test(executable, test_kind, dataset_kind, granularity, preparator):
     for i in xrange(REPEATS):
         print i
         preparator()
-        run_e('time -v -o time.out %s < %s > /dev/null 2> /dev/null' % (binary, TEMP_INPUT))
+        run_e('time -v -o time.out %s < %s > %s 2> /dev/null' % (binary, TEMP_INPUT, output_file))
         with open('time.out') as f:
             for line in f.readlines():
                 title, value = line.rsplit(':', 1)
@@ -307,23 +309,53 @@ def process_file(filename, output_dir):
             run_o(""" rm %s """ % TEMP_INPUT)
             test.generate_test(filename, input_lines)
 
+            output_files = []
+
             #for binary in binaries:
-            for executable in executables:
+            for i, executable in enumerate(executables):
+                output_file = '/tmp/_tmp_output_' + str(i)
+                output_files.append(output_file)
                 #test.prepare_single_test_iteration(filename, lines)
-                do_test(executable, test.__class__.__name__, filename, input_lines, lambda: test.prepare_single_test_iteration(filename, lines))
+                do_test(executable=executable,
+                        test_kind=test.__class__.__name__,
+                        dataset_kind=filename,
+                        granularity=input_lines,
+                        preparator=lambda: test.prepare_single_test_iteration(filename, lines),
+                        output_file=output_file)
+
+            if not are_files_the_same(output_files):
+                print 'Output files are not the same!'
+                sys.exit(-1)
 
 def do_tests(output_dir):
     for filename in files:
         process_file(filename, output_dir)
-
-def get_base_dir():
-    return os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 def build_test_executables():
     print 'Building test executables...'
     for executable in executables:
         print '  building %s' % executable.get_name()
         run_o(""" scons -s %s_compare_test """ % executable.get_name(), cwd=get_base_dir())
+
+
+class HTMLFile:
+
+    def __init__(self):
+        self.html = ''
+
+    def append_section(self, name):
+        self.html += '<h2>' + name + '</h2>'
+
+    def append_subsection(self, name):
+        self.html += '<h3>' + name + '</h3>'
+
+    def append_image(self, filename):
+        self.html += '<img src="' + filename + '" width="33%">'
+
+    def save_to_file(self, filename):
+        with open(filename, "w") as html_file:
+            html_file.write(self.html)
+
 
 if __name__ == '__main__':
 
@@ -350,8 +382,12 @@ if __name__ == '__main__':
 
     from math import sqrt
 
+    html = HTMLFile()
+
     for dataset_kind, by_dataset_kind in collected_data.iteritems():
+        html.append_section(dataset_kind)
         for test_kind, by_test_kind in by_dataset_kind.iteritems():
+            html.append_subsection(test_kind)
             for title, by_title in by_test_kind.iteritems():
 
                 if title not in wanted_convertes:
@@ -386,15 +422,22 @@ if __name__ == '__main__':
                     errorbars.append(plt.errorbar(map(nth(0), points), map(nth(1), points), fmt='.-', yerr=map(nth(2), points), label=label, alpha=0.7))
                     legend_labels.append(label)
 
+
+                image_filename = make_name("%s  %s  %s" % (dataset_kind, test_kind, title)) + '.png'
+
                 image_title = '%s, %s' % (dataset_kind, test_kind)
                 plt.title(image_title)
                 plt.ylabel(title)
                 plt.xlabel('queries')
                 #plt.legend(legend_labels, numpoints=1)
                 plt.legend(map(nth(0), errorbars), legend_labels, numpoints=1)
-                plt.savefig('%s/%s.png' % (sys.argv[1], make_name("%s  %s  %s" % (dataset_kind, test_kind, title))))
+                plt.savefig('out/' + image_filename)
                 plt.clf()
                 plt.cla()
+
+                html.append_image(image_filename)                
+
                 num += 1
 
+    html.save_to_file('%s/index.html' % sys.argv[1])
     print collected_data
