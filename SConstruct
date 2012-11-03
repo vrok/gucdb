@@ -38,43 +38,11 @@ env.StaticLibrary(target='gtest_lib',
                   LINKFLAGS=['-pthread'])
 
 
-class ComparativeTest:
+from test import comparative
 
-    def get_libs_list(self):
-        raise NotImplementedError()
-
-    def get_name(self):
-        raise NotImplementedError()
-
-
-class BDBComparativeTest:
-    
-    def get_libs_list(self):
-        return ['db_cxx-5.1']
-
-    def get_name(self):
-        return 'bdb'
-
-
-class SkoDBComparativeTest:
-    
-    def get_libs_list(self):
-        return ['modules_lib']
-
-    def get_name(self):
-        return 'skodb'
-
-
-class SQLiteComparativeTest:
-    
-    def get_libs_list(self):
-        return ['sqlite3']
-
-    def get_name(self):
-        return 'sqlite'
-
-
-comparative_tests = [BDBComparativeTest(), SQLiteComparativeTest(), SkoDBComparativeTest()]
+comparative_tests = [comparative.BerkeleyDBExecutable(),
+                     comparative.SQLiteExecutable(),
+                     comparative.OwnExecutable()]
 
 # Prepare comparative tests targets (i.e. 'bdb_compare_test', 'skodb_compare_test', 'sqlite_compare_test').
 # Such target actually builds a binary which later can be used to compare performance (etc.).
