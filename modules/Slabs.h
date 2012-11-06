@@ -53,6 +53,11 @@ struct ObjectID
         return (slabID << 20) | slabInnerID;
     }
 
+    bool isNull()
+    {
+        return slabID == 0 && slabInnerID == 0;
+    }
+
     /* We'd like to sizeof(ObjectID) == 64 */
     unsigned long long slabID : 44;
     unsigned long slabInnerID : 20;

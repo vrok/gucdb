@@ -46,8 +46,11 @@ void Slabs::initialize()
             for (unsigned long currentByte = 0; currentByte <= maxNumOfObjectsInSlab / 8; currentByte++) {
                 for (int currentBit = 0; currentBit < 8; currentBit++) {
                     if (0 == ((1 << currentBit) & slabInfo->slabObjectsMap[currentByte])) {
+                        /* To understand why this address computation makes sense, please see the comments
+                         * in Slabs::getLocationInSlabByInnerID().
+                         */
                         slabClasses[getSuitableClass(slabInfo->slabObjectSize)]
-                                    .push_back(ObjectID(slabId, (currentByte * 8) + currentBit));
+                                    .push_back(ObjectID(slabId, (currentByte * 8) + currentBit + 1));
                     }
                 }
             }
@@ -142,7 +145,7 @@ unsigned long long Slabs::createNewSlab(int classId)
 
 	unsigned long maxNumOfObjectsInSlab = SLAB_SIZE / getSizeOfClass(classId);
 
-	for (unsigned long slabInnerID = 0; slabInnerID < maxNumOfObjectsInSlab; slabInnerID++) {
+	for (unsigned long slabInnerID = 1; slabInnerID <= maxNumOfObjectsInSlab; slabInnerID++) {
 	    slabsClass.push_back(ObjectID(newSlabId, slabInnerID));
 	}
 
@@ -151,7 +154,14 @@ unsigned long long Slabs::createNewSlab(int classId)
 
 char* Slabs::getLocationInSlabByInnerID(Slab &slab, SlabInfo &slabInfo, unsigned long slabInnerID)
 {
-    return slab.data + (slabInfo.slabObjectSize * slabInnerID);
+    /* slabInnerID is always larger by 1 than the actual offset (hence its decremented before its
+     * used below). The reason is that without this an ObjectID with both slabID and slabInnerID equal
+     * to 0 would be valid. We want to preserve it - it is needed in the Trie module, it represents
+     * the null ObjectID.
+     * (If you're updating this comment, please also check whether comments in different places
+     * in this file that refer to this one need updating.)
+     */
+    return slab.data + (slabInfo.slabObjectSize * (slabInnerID - 1));
 }
 
 ObjectID Slabs::saveData(const char *source, size_t size)
@@ -171,6 +181,8 @@ ObjectID Slabs::saveData(const char *source, size_t size)
     slabClass.pop_back();
     unsigned long long slabID = objectID.slabID;
     unsigned long innerSlabID = objectID.slabInnerID;
+    /* See the comments in getLocationInSlabByInnerID to understand this. */
+    unsigned long innerSlabOffset = innerSlabID - 1;
 
     Slab *targetSlab = slabs->getBin(slabID);
     SlabInfo *targetSlabInfo = slabsInfo->getBin(slabID);
@@ -181,7 +193,7 @@ ObjectID Slabs::saveData(const char *source, size_t size)
     memcpy(targetLocation + sizeOfExtraData, source, size);
 
     targetSlabInfo->allocated += targetSlabInfo->slabObjectSize;
-    targetSlabInfo->slabObjectsMap[innerSlabID / 8] |= 1 << (innerSlabID % 8);
+    targetSlabInfo->slabObjectsMap[innerSlabOffset / 8] |= 1 << (innerSlabOffset % 8);
 
     return ObjectID(slabID, innerSlabID);
 }
@@ -193,7 +205,7 @@ size_t Slabs::readData(char *&source, ObjectID objectID)
     Slab *sourceSlab = slabs->getBin(objectID.slabID);
     SlabInfo *sourceSlabInfo = slabsInfo->getBin(objectID.slabID);
 
-    char *rawData = sourceSlab->data + (sourceSlabInfo->slabObjectSize * objectID.slabInnerID);
+    char *rawData = getLocationInSlabByInnerID(*sourceSlab, *sourceSlabInfo, objectID.slabInnerID);
 
     size_t dataSize = readObjectSizeAndPointToData(rawData, sourceSlabInfo->slabObjectSize);
 
@@ -206,15 +218,15 @@ void Slabs::removeData(ObjectID objectID)
     assert(slabs->isBinIDSafeAndAllocated(objectID.slabID));
 
     unsigned long long slabID = objectID.slabID;
-    unsigned long innerSlabID = objectID.slabInnerID;
+    unsigned long innerSlabOffset = objectID.slabInnerID - 1;
 
     SlabInfo *slabInfo = slabsInfo->getBin(slabID);
     Slab *slab = slabs->getBin(slabID);
 
     slabInfo->allocated -= slabInfo->slabObjectSize;
-    slabInfo->slabObjectsMap[innerSlabID / 8] &= ~(1 << (innerSlabID % 8));
+    slabInfo->slabObjectsMap[innerSlabOffset / 8] &= ~(1 << (innerSlabOffset % 8));
 
-    char *rawData = slab->data + (slabInfo->slabObjectSize * objectID.slabInnerID);
+    char *rawData = getLocationInSlabByInnerID(*slab, *slabInfo, objectID.slabInnerID);
     /* Erase the deallocated space. Logic of the application should prevent clients
      * re-using this ObjectID from being able to access the old data, but if something
      * should be removed, let's make it removed.

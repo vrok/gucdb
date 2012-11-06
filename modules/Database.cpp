@@ -19,6 +19,9 @@ using namespace std;
 
 namespace Db {
 
+const string Database::emptyString = "";
+const Value Database::nullValue(emptyString);
+
 Database::Database(const string & dbDirectory)
 : dbDirectory(dbDirectory)
 {
@@ -61,6 +64,9 @@ Value Database::read(const DatabaseKey &key)
 {
     ObjectID oid = mainIndex->get(key);
 
+    if (oid.isNull())
+        return nullValue;
+
     char *result = NULL;
     size_t resultSize = slabs->readData(result, oid);
 
@@ -77,15 +83,17 @@ int Database::write(const DatabaseKey &key, const Value &value)
 int Database::remove(const DatabaseKey &key)
 {
     ObjectID oid = mainIndex->get(key);
-    mainIndex->deleteKey(key);
-    slabs->removeData(oid);
+    if (! oid.isNull()) {
+        mainIndex->deleteKey(key);
+        slabs->removeData(oid);
+    }
     return 0;
 }
 
 void Database::dump()
 {
-    //mainIndex->dump();
-    slabs->dumpAllInfo(cout);
+    mainIndex->dump();
+    //slabs->dumpAllInfo(cout);
 }
 
 } /* namespace Db */
