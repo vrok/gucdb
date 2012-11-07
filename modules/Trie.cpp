@@ -295,13 +295,17 @@ void Trie<ValueType>::deleteKey(const DatabaseKey &key)
 
             /* We could just fill pointers from the leftmost to the rightmost matched char with zeros,
              * but we want to maximally fill the leaves we have, so try to merge the pointers with
-             * their neighbours.
+             * their neighbours (provided that these neighbours are linked to leafs (i.e. they are not pure)).
              */
-            if ((leftmostCharWithCurrentLink > 0) && !path[i]->children[leftmostCharWithCurrentLink - 1].isNull()) {
+            if ((leftmostCharWithCurrentLink > 0) && !path[i]->children[leftmostCharWithCurrentLink - 1].isNull()
+                    && !path[i]->isLinkPure(leftmostCharWithCurrentLink - 1)) {
+
                 path[i]->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink,
                                           path[i]->children[leftmostCharWithCurrentLink - 1]);
             } else
-            if ((rightmostCharWithCurrentLink < 0xff) && !path[i]->children[rightmostCharWithCurrentLink + 1].isNull()) {
+            if ((rightmostCharWithCurrentLink < 0xff) && !path[i]->children[rightmostCharWithCurrentLink + 1].isNull()
+                    && !path[i]->isLinkPure(rightmostCharWithCurrentLink + 1)) {
+
                 path[i]->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink,
                                           path[i]->children[rightmostCharWithCurrentLink + 1]);
             } else {
