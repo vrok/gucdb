@@ -230,17 +230,9 @@ void Trie<ValueType>::addKey(const DatabaseKey &key, ValueType value)
     }
 }
 
-template<typename ValueType>
-void Trie<ValueType>::deleteKey(const DatabaseKey &key)
+template <typename ValueType>
+bool Trie<ValueType>::deleteKeyAndJustDecideIfShouldCleanUpTrie(const DatabaseKey &key, vector<TrieNode<ValueType>*> &path)
 {
-    /* We need to remember the nodes we visit, because we need them in a later phase.
-     * In case this turns out to be slow (it uses heap), one alternative
-     * that might be viable is doing this deletion recursively (we could
-     * just use stack then (but what about stack overflows?)).
-     */
-    vector<TrieNode<ValueType>*> path;
-    path.reserve(10);
-
     int currentCharIdx = 0;
 
     TrieNode<ValueType> *currentNode = nodes->getBin(0);
@@ -258,7 +250,7 @@ void Trie<ValueType>::deleteKey(const DatabaseKey &key)
                 currentNode->values[key.data[currentCharIdx - 1]] = 0;
 
                 if (! currentNode->isPointerTheOnlyNonNullField(TriePointer())) {
-                    return;
+                    return false;
                 }
             } else {
                 path.push_back(currentNode);
@@ -268,18 +260,24 @@ void Trie<ValueType>::deleteKey(const DatabaseKey &key)
             leaf->remove(key, currentCharIdx);
 
             if (! leaf->isEmpty()) {
-                return;
+                return false;
             }
 
             break;
         }
     }
 
-    int nodeCount = path.size();
+    return true;
+}
+
+template <typename ValueType>
+void Trie<ValueType>::cleanUpTrieAfterKeyRemoval(const DatabaseKey &key, const vector<TrieNode<ValueType>*> &pathToRemoved)
+{
+    int nodeCount = pathToRemoved.size();
 
     for (int i = nodeCount - 1; i >= 0; --i) {
-        TriePointer &currentLink = path[i]->children[key.data[i]];
-        bool shouldContinue = path[i]->isPointerTheOnlyNonNullField(currentLink);
+        TriePointer &currentLink = pathToRemoved[i]->children[key.data[i]];
+        bool shouldContinue = pathToRemoved[i]->isPointerTheOnlyNonNullField(currentLink);
 
         if (shouldContinue) {
             if (currentLink.leaf == 1) {
@@ -288,33 +286,50 @@ void Trie<ValueType>::deleteKey(const DatabaseKey &key)
                 nodes->freeBin(currentLink.link);
             }
 
-            path[i]->setChildrenRange(0x00, 0xff, TriePointer());
+            pathToRemoved[i]->setChildrenRange(0x00, 0xff, TriePointer());
         } else {
-            unsigned char leftmostCharWithCurrentLink = path[i]->checkLeftmostCharWithLink(key.data[i], currentLink);
-            unsigned char rightmostCharWithCurrentLink = path[i]->checkRightmostCharWithLink(key.data[i], currentLink);
+            unsigned char leftmostCharWithCurrentLink = pathToRemoved[i]->checkLeftmostCharWithLink(key.data[i], currentLink);
+            unsigned char rightmostCharWithCurrentLink = pathToRemoved[i]->checkRightmostCharWithLink(key.data[i], currentLink);
 
             /* We could just fill pointers from the leftmost to the rightmost matched char with zeros,
              * but we want to maximally fill the leaves we have, so try to merge the pointers with
              * their neighbours (provided that these neighbours are linked to leafs (i.e. they are not pure)).
              */
-            if ((leftmostCharWithCurrentLink > 0) && !path[i]->children[leftmostCharWithCurrentLink - 1].isNull()
-                    && !path[i]->isLinkPure(leftmostCharWithCurrentLink - 1)) {
+            if ((leftmostCharWithCurrentLink > 0) && !pathToRemoved[i]->children[leftmostCharWithCurrentLink - 1].isNull()
+                    && !pathToRemoved[i]->isLinkPure(leftmostCharWithCurrentLink - 1)) {
 
-                path[i]->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink,
-                                          path[i]->children[leftmostCharWithCurrentLink - 1]);
+                pathToRemoved[i]->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink,
+                                          pathToRemoved[i]->children[leftmostCharWithCurrentLink - 1]);
             } else
-            if ((rightmostCharWithCurrentLink < 0xff) && !path[i]->children[rightmostCharWithCurrentLink + 1].isNull()
-                    && !path[i]->isLinkPure(rightmostCharWithCurrentLink + 1)) {
+            if ((rightmostCharWithCurrentLink < 0xff) && !pathToRemoved[i]->children[rightmostCharWithCurrentLink + 1].isNull()
+                    && !pathToRemoved[i]->isLinkPure(rightmostCharWithCurrentLink + 1)) {
 
-                path[i]->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink,
-                                          path[i]->children[rightmostCharWithCurrentLink + 1]);
+                pathToRemoved[i]->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink,
+                                          pathToRemoved[i]->children[rightmostCharWithCurrentLink + 1]);
             } else {
-                path[i]->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink, TriePointer());
+                pathToRemoved[i]->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink, TriePointer());
             }
 
             break;
         }
     }
+}
+
+template<typename ValueType>
+void Trie<ValueType>::deleteKey(const DatabaseKey &key)
+{
+    /* We need to remember the nodes we visit, because we need them in a later phase.
+     * In case this turns out to be slow (it uses heap), one alternative
+     * that might be viable is doing this deletion recursively (we could
+     * just use stack then (but what about stack overflows?)).
+     */
+    vector<TrieNode<ValueType>*> path;
+    path.reserve(10);
+
+    if (! deleteKeyAndJustDecideIfShouldCleanUpTrie(key, path))
+        return;
+
+    cleanUpTrieAfterKeyRemoval(key, path);
 }
 
 template<typename ValueType>
