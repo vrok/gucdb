@@ -99,6 +99,9 @@ ValueType Trie<ValueType>::get(const DatabaseKey &key)
     while (true) {
         TriePointer *currentPointer = &currentNode->children[key.data[currentCharIdx]];
 
+        if (currentPointer->isNull()) {
+            return 0;
+        } else
         if (currentPointer->leaf == 0) {
             currentCharIdx++;
             currentNode = nodes->getBin(currentPointer->link);
