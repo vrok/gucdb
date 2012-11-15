@@ -29,6 +29,9 @@ private:
     BinFile<TrieNode<ValueType> > *nodes;
     BinFile<TrieLeaf<ValueType> > *leaves;
 
+    bool deleteKeyAndJustDecideIfShouldCleanUpTrie(const DatabaseKey &key, vector<TrieNode<ValueType>*> &path);
+    void cleanUpTrieAfterKeyRemoval(const DatabaseKey &key, const vector<TrieNode<ValueType>*> &pathToRemoved);
+
 public:
 	Trie(BinFile<TrieNode<ValueType> > *nodes, BinFile<TrieLeaf<ValueType> > *leaves);
 	~Trie();

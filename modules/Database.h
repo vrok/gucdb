@@ -40,6 +40,8 @@ private:
 
 	Trie<ObjectID> *mainIndex;
 	Slabs *slabs;
+
+	static const string emptyString;
 public:
 	Database(const string &dbDirectory);
 	virtual ~Database();
@@ -48,6 +50,8 @@ public:
 	int write(const DatabaseKey &key, const Value &value);
 	int remove(const DatabaseKey &key);
 	void dump();
+
+	static const Value nullValue;
 };
 
 } /* namespace Db */

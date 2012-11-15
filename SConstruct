@@ -37,6 +37,24 @@ env.StaticLibrary(target='gtest_lib',
                   CPPPATH=['modules', GTEST_DIR, GTEST_DIR + 'include'],
                   LINKFLAGS=['-pthread'])
 
+
+from test import comparative
+
+comparative_tests = [comparative.BerkeleyDBExecutable(),
+                     comparative.SQLiteExecutable(),
+                     comparative.OwnExecutable()]
+
+# Prepare comparative tests targets (i.e. 'bdb_compare_test', 'skodb_compare_test', 'sqlite_compare_test').
+# Such target actually builds a binary which later can be used to compare performance (etc.).
+for test in comparative_tests:
+    env.Program(target='%s_compare_test' % test.get_name(),
+                source=['test/comparative_tests/main_%s.cpp' % test.get_name()],
+                CPPPATH=['modules', 'test/comparative_tests'],
+                LINKFLAGS=['-pthread'],
+                LIBS=test.get_libs_list(), LIBPATH='.') 
+
+# Prepare unit tests targets (i.e. 'trie_leaf_test', 'trie_node_test').
+# Such target builds a binary which tests a single module.
 for module in modules:
 
     test_file_name = '%s/%s_test.cpp' % (TEST_DIR, module.rstrip('.cpp'))
