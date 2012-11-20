@@ -16,7 +16,7 @@
 namespace Db {
 
 template<typename ValueType>
-void TrieNode<ValueType>::setChild(unsigned char character,
+void TrieNode<ValueType>::setChildPointer(unsigned char character,
         const TriePointer &childPointer) {
     memcpy(&children[character], &childPointer, sizeof(TriePointer));
 }

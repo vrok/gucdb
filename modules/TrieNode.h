@@ -19,11 +19,10 @@ template<typename ValueType>
 struct TrieNode {
     typedef ExponentialAllocator<TrieNode<ValueType> > AllocatorType;
 
-    TriePointer children[NODE_SIZE];
+    void setChildPointer(unsigned char character, const TriePointer &childPointer);
 
-    ValueType values[NODE_SIZE];
-
-    void setChild(unsigned char character, const TriePointer &childPointer);
+    TriePointer &getChildPointer(unsigned char character)
+    { return children[character]; } // Note that there are no safety checks here.
 
     void setChildrenRange(unsigned char firstCharacter, unsigned char lastCharacter, const TriePointer &childPointer);
 
@@ -34,6 +33,20 @@ struct TrieNode {
     unsigned char checkRightmostCharWithLink(unsigned char initialCharacter, const TriePointer &childPointer);
 
     bool isPointerTheOnlyNonNullField(const TriePointer &childPointer);
+
+    void setValue(unsigned char character, ValueType &value)
+    { values[character] = value; }
+
+    template<typename ConvertableToValueType>
+    void setValue(unsigned char character, ConvertableToValueType value)
+    { values[character] = value; }
+
+    ValueType & getValue(unsigned char character)
+    { return values[character]; }
+
+private:
+    TriePointer children[NODE_SIZE];
+    ValueType values[NODE_SIZE];
 };
 
 } /* namespace Db */
