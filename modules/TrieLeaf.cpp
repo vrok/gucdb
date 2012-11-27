@@ -102,7 +102,7 @@ static unsigned short hash(const unsigned char *data, size_t length)
 
 static unsigned short hash(const DatabaseKey &key, int firstCharacterIdx)
 {
-    return hash(& key.data[firstCharacterIdx], key.length - firstCharacterIdx);
+    return hash(key.getData(), key.getLength() - firstCharacterIdx);
 }
 
 template <typename ValueType>
@@ -264,8 +264,8 @@ template <typename ValueType>
 int TrieLeaf<ValueType>::compareKeys(unsigned char *currentCharacter,
         unsigned char *endCharacter, const DatabaseKey &key, int firstCharacterIdx)
 {
-    const unsigned char *endKeyCharacter = key.data + key.length;
-    const unsigned char *currentKeyCharacter = key.data + firstCharacterIdx;
+    const unsigned char *endKeyCharacter = key.getData() + key.getLength();
+    const unsigned char *currentKeyCharacter = key.getData() + firstCharacterIdx;
 
     while ((currentCharacter < endCharacter) &&
            (currentKeyCharacter < endKeyCharacter) &&
@@ -306,12 +306,12 @@ template <typename ValueType>
 void TrieLeaf<ValueType>::add(const DatabaseKey &key, int firstCharacterIdx, ValueType value)
 {
     assert(canFit(key, firstCharacterIdx));
-    unsigned short activeKeyLength = key.length - firstCharacterIdx;
+    unsigned short activeKeyLength = key.getLength() - firstCharacterIdx;
 
     DATA_LOCATION_TO_US(FREE_SPACE_START) = activeKeyLength;
 
     memcpy((void*)(FREE_SPACE_START + SOF_VALUE_LEN),
-           (void*)(key.data + firstCharacterIdx), activeKeyLength);
+           (void*)(key.getData() + firstCharacterIdx), activeKeyLength);
 
     DATA_LOCATION_TO_VALUE(FREE_SPACE_START + SOF_VALUE_LEN + activeKeyLength) = value;
 
@@ -373,7 +373,7 @@ bool TrieLeaf<ValueType>::isEmpty()
 template <typename ValueType>
 bool TrieLeaf<ValueType>::canFit(const DatabaseKey &key, int firstCharacterIdx)
 {
-    return (key.length - firstCharacterIdx + SOF_VALUE_LEN + sizeof(ValueType) + SOF_MAP_ELEM)
+    return (key.getLength() - firstCharacterIdx + SOF_VALUE_LEN + sizeof(ValueType) + SOF_MAP_ELEM)
             <= (sizeof(data) - LEAF_USED_SIZE);
 }
 

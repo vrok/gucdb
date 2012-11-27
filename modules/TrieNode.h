@@ -13,7 +13,7 @@
 
 namespace Db {
 
-#define NODE_SIZE 0xff + 1
+#define NODE_SIZE 0x0f + 1
 
 template<typename ValueType>
 struct TrieNode {

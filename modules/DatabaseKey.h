@@ -16,8 +16,6 @@ namespace Db {
 
 class DatabaseKey {
 public:
-    unsigned char data[512];
-    int length;
 
     DatabaseKey();
 
@@ -40,6 +38,25 @@ public:
         memcpy(data, str.c_str(), str.length());
         length = str.length();
     }
+
+    int getLength() const { return length; }
+
+    void fillWithOneChar(unsigned char character) {
+        data[0] = character;
+        length = 1;
+    }
+
+    unsigned char operator [] (int index) const {
+        return data[index];
+    }
+
+    const unsigned char* getData() const {
+        return data;
+    }
+
+private:
+    unsigned char data[512];
+    int length;
 };
 
 } /* namespace Db */
