@@ -152,27 +152,25 @@ def prep_file_exit(filename, lines, output_file=TEMP_INPUT):
     run_o(""" echo exit > %s """ % output_file)
 
 def prep_file_add_sorted(filename, lines, output_file=TEMP_INPUT):
-    #run_o(""" head -n %d "%s" | xargs -d '\n' -n 1 -I{} echo write {} {} >> %s """ % \
     run_o(""" head -n %d "%s" | awk '{print "write $0 $0"}' >> %s """ % \
           (lines, filename, output_file))
     run_o(""" echo exit >> %s """ % output_file)
 
 def prep_file_add_random(filename, lines, output_file=TEMP_INPUT):
-    #run_o(""" head -n %d "%s" | rl | xargs -d '\n' -n 1 -I{} echo write {} {} >> %s """ % \
     run_o(""" head -n %d "%s" | rl | awk '{print "write $0 $0"}' >> %s """ % \
           (lines, filename, output_file))
     run_o(""" echo exit >> %s """ % output_file)
 
 def prep_file_read_sorted(filename, lines, output_file=TEMP_INPUT):
-    run_o(""" head -n %d "%s" | xargs -d '\n' -n 1 -I{} echo read {} >> %s """ % \
+    run_o(""" head -n %d "%s" | awk '{print "read $0"}' >> %s """ % \
           (lines, filename, output_file))
     run_o(""" echo exit >> %s """ % output_file)
 
 def prep_file_add_remove_add(filename, lines, output_file=TEMP_INPUT):
     run_o(""" head -n %d "%s" | rl > /tmp/temp.txt """ % (lines, filename))
-    run_o(""" cat /tmp/temp.txt | xargs -d '\n' -n 1 -I{} echo write {} {} >> %s """ % output_file)
-    run_o(""" head -n %d /tmp/temp.txt | rl | xargs -d '\n' -n 1 -I{} echo remove {} >> %s """ % (lines / 2, output_file))
-    run_o(""" tail -n %d /tmp/temp.txt | rl | xargs -d '\n' -n 1 -I{} echo write {} {} >> %s """ % (lines / 2, output_file))
+    run_o(""" cat /tmp/temp.txt | awk '{print "write $0 $0"}' >> %s """ % output_file)
+    run_o(""" head -n %d /tmp/temp.txt | rl | awk '{print "remove $0"}' >> %s """ % (lines / 2, output_file))
+    run_o(""" tail -n %d /tmp/temp.txt | rl | awk '{print "write $0 $0"}' >> %s """ % (lines / 2, output_file))
     run_o(""" echo exit >> %s """ % output_file)
 
 class Test:
