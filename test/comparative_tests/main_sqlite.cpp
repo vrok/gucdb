@@ -28,7 +28,7 @@ public:
     SQLiteAdapter() {
         assert(SQLITE_OK == sqlite3_open("/tmp/main.sqlite", &db));
 
-        query("create table if not exists storage (k string, v string);");
+        query("create table if not exists storage (k text, v text);");
         query("create index if not exists k_key on storage (k);");
         query("PRAGMA synchronous = OFF;");
         query("PRAGMA journal_mode = OFF;");
