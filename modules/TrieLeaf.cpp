@@ -102,7 +102,7 @@ static unsigned short hash(const unsigned char *data, size_t length)
 
 static unsigned short hash(const DatabaseKey &key, int firstCharacterIdx)
 {
-    return hash(key.getData(), key.getLength() - firstCharacterIdx);
+    return hash(key.getData() + firstCharacterIdx, key.getLength() - firstCharacterIdx);
 }
 
 template <typename ValueType>

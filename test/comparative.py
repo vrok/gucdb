@@ -12,11 +12,10 @@ REPEATS = 1
 MEMORY_LABEL = 'Memory (MB)'
 
 files = [
-#    'test_data/Wikipedia_titles',
-    'test_data/Big_300_to_500',
-#    'test_data/Length_from_150_to_200',
-#    'test_data/URLs',
-#    'test_data/Genome',
+    'test_data/Wikipedia_titles',
+    'test_data/Length_from_150_to_200',
+    'test_data/URLs',
+    'test_data/Genome',
 #    'text.txt',
 ]
 
@@ -161,7 +160,6 @@ def prep_file_add_random(filename, lines, output_file=TEMP_INPUT):
     run_o(""" head -n %d "%s" | rl | awk '{print "write " $0 " " $0}' >> %s """ % \
           (lines, filename, output_file))
     run_o(""" echo exit >> %s """ % output_file)
-    import pdb; pdb.set_trace()
 
 def prep_file_read_sorted(filename, lines, output_file=TEMP_INPUT):
     run_o(""" head -n %d "%s" | awk '{print "read " $0}' >> %s """ % \
