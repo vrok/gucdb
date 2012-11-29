@@ -429,7 +429,7 @@ if __name__ == '__main__':
                 plt.xlabel('queries')
                 #plt.legend(legend_labels, numpoints=1)
                 plt.legend(map(nth(0), errorbars), legend_labels, numpoints=1)
-                plt.savefig('out/' + image_filename)
+                plt.savefig(sys.argv[1] + '/' + image_filename)
                 plt.clf()
                 plt.cla()
 
