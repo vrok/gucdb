@@ -12,6 +12,8 @@
 #include <string>
 #include <map>
 
+#include <sys/types.h>
+
 namespace Db {
 
 class MMapedFile {

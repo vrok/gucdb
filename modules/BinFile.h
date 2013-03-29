@@ -8,6 +8,8 @@
 #include <string>
 using namespace std;
 
+#include <sys/types.h>
+
 #include "MMapedFile.h"
 #include "BinFileMap.h"
 
