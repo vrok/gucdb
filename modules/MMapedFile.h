@@ -39,7 +39,7 @@ public:
 
     void extendFileToSize(size_t newSize);
 
-    bool extendFileAndMmapingToSize(size_t newSize);
+    bool extendFileAndMmapingToSize(size_t newSize, bool shouldExtendFile = true);
 
     std::string mmapErrnoToStr(int errnoNum) const;
 

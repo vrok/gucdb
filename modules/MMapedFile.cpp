@@ -38,8 +38,10 @@ void MMapedFile::extendFileToSize(size_t newSize) {
 
 }
 
-bool MMapedFile::extendFileAndMmapingToSize(size_t newSize) {
-    extendFileToSize(newSize);
+bool MMapedFile::extendFileAndMmapingToSize(size_t newSize, bool shouldExtendFile) {
+    if (shouldExtendFile) {
+        extendFileToSize(newSize);
+    }
 
     size_t newMmapingSize = newSize - mmaped_size;
 
@@ -73,7 +75,6 @@ MMapedFile::OpeningResult MMapedFile::openMMapedFile(const std::string &filename
     struct stat sb;
     off_t len;
     char *p;
-    bool fillWithZerosAfterMmap = false;
 
     fd = open(filename.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
     if (fd == -1) {
@@ -93,7 +94,14 @@ MMapedFile::OpeningResult MMapedFile::openMMapedFile(const std::string &filename
 
     mmaped_size = 0;
 
-    extendFileAndMmapingToSize(max(minimalInitialSize, (size_t) sb.st_size));
+    size_t initialSize = minimalInitialSize;
+    bool fileExteningNeeded = true;
+    if (sb.st_size >= initialSize) {
+        initialSize = sb.st_size;
+        fileExteningNeeded = false;
+    }
+
+    extendFileAndMmapingToSize(initialSize, fileExteningNeeded);
 
     if (sb.st_size < minimalInitialSize) {
         return NEW_FILE;
