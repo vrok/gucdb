@@ -24,13 +24,17 @@ struct TrieNode {
     TriePointer &getChildPointer(unsigned char character)
     { return children[character]; } // Note that there are no safety checks here.
 
-    void setChildrenRange(unsigned char firstCharacter, unsigned char lastCharacter, const TriePointer &childPointer);
+    void setChildrenRange(unsigned char firstCharacter,
+                          unsigned char lastCharacter,
+                          const TriePointer &childPointer);
 
     bool isLinkPure(unsigned char character);
 
-    unsigned char checkLeftmostCharWithLink(unsigned char initialCharacter, const TriePointer &childPointer);
+    unsigned char checkLeftmostCharWithLink(unsigned char initialCharacter,
+                                            const TriePointer &childPointer);
 
-    unsigned char checkRightmostCharWithLink(unsigned char initialCharacter, const TriePointer &childPointer);
+    unsigned char checkRightmostCharWithLink(unsigned char initialCharacter,
+                                             const TriePointer &childPointer);
 
     bool isPointerTheOnlyNonNullField(const TriePointer &childPointer);
 

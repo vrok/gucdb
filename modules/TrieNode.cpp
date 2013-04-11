@@ -15,15 +15,27 @@
 
 namespace Db {
 
+inline unsigned char lowerHalf(unsigned char ch)
+{
+    return (ch & 0xf0) >> 4;
+}
+
+inline unsigned char upperHalf(unsigned char ch)
+{
+    return ch & 0x0f;
+}
+
 template<typename ValueType>
 void TrieNode<ValueType>::setChildPointer(unsigned char character,
-        const TriePointer &childPointer) {
+        const TriePointer &childPointer)
+{
     memcpy(&children[character], &childPointer, sizeof(TriePointer));
 }
 
 template<typename ValueType>
 void TrieNode<ValueType>::setChildrenRange(unsigned char firstCharacter,
-        unsigned char lastCharacter, const TriePointer &childPointer) {
+        unsigned char lastCharacter, const TriePointer &childPointer)
+{
 
     assert(firstCharacter <= lastCharacter);
 
@@ -44,12 +56,14 @@ bool TrieNode<ValueType>::isLinkPure(unsigned char character)
     if (character == (NODE_SIZE - 1)) {
         return children[character - 1] != children[character];
     } else {
-        return (children[character - 1] != children[character]) && (children[character + 1] != children[character]);
+        return (children[character - 1] != children[character]) &&
+               (children[character + 1] != children[character]);
     }
 }
 
 template<typename ValueType>
-unsigned char TrieNode<ValueType>::checkLeftmostCharWithLink(unsigned char initialCharacter, const TriePointer &childPointer)
+unsigned char TrieNode<ValueType>::checkLeftmostCharWithLink(unsigned char initialCharacter,
+                                                             const TriePointer &childPointer)
 {
     unsigned char currentCharacter = initialCharacter;
 
@@ -65,7 +79,8 @@ unsigned char TrieNode<ValueType>::checkLeftmostCharWithLink(unsigned char initi
 }
 
 template<typename ValueType>
-unsigned char TrieNode<ValueType>::checkRightmostCharWithLink(unsigned char initialCharacter, const TriePointer &childPointer)
+unsigned char TrieNode<ValueType>::checkRightmostCharWithLink(unsigned char initialCharacter,
+                                                              const TriePointer &childPointer)
 {
     unsigned char currentCharacter = initialCharacter;
 
