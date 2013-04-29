@@ -5,8 +5,12 @@
  *      Author: m
  */
 
-#include "TrieNode.h"
+#ifndef BIN_FILE_TEST_OVERRIDE
+    // If defined, then a fake definition is provided by unittest
+    #include "BinFile.h"
+#endif
 
+#include "TrieNode.h"
 #include "Slabs.h"
 
 #include <cstdlib>
@@ -15,26 +19,27 @@
 
 namespace Db {
 
-inline unsigned char lowerHalf(unsigned char ch)
+inline unsigned char getUpperHalf(unsigned char ch)
 {
     return (ch & 0xf0) >> 4;
 }
 
-inline unsigned char upperHalf(unsigned char ch)
+inline unsigned char getLowerHalf(unsigned char ch)
 {
     return ch & 0x0f;
 }
 
 template<typename ValueType>
-void TrieNode<ValueType>::setChildPointer(unsigned char character,
-        const TriePointer &childPointer)
+void TrieNode<ValueType>::setChildPointer(BinFile<TrieNode> &nodes,
+        unsigned char character, const TriePointer &childPointer)
 {
     memcpy(&children[character], &childPointer, sizeof(TriePointer));
 }
 
 template<typename ValueType>
-void TrieNode<ValueType>::setChildrenRange(unsigned char firstCharacter,
-        unsigned char lastCharacter, const TriePointer &childPointer)
+void TrieNode<ValueType>::setChildrenRange(BinFile<TrieNode> &nodes,
+        unsigned char firstCharacter, unsigned char lastCharacter,
+        const TriePointer &childPointer)
 {
 
     assert(firstCharacter <= lastCharacter);
@@ -48,7 +53,7 @@ void TrieNode<ValueType>::setChildrenRange(unsigned char firstCharacter,
 }
 
 template<typename ValueType>
-bool TrieNode<ValueType>::isLinkPure(unsigned char character)
+bool TrieNode<ValueType>::isLinkPure(BinFile<TrieNode> &nodes, unsigned char character)
 {
     if (character == 0) {
         return children[character + 1] != children[character];
@@ -62,7 +67,7 @@ bool TrieNode<ValueType>::isLinkPure(unsigned char character)
 }
 
 template<typename ValueType>
-unsigned char TrieNode<ValueType>::checkLeftmostCharWithLink(unsigned char initialCharacter,
+unsigned char TrieNode<ValueType>::checkLeftmostCharWithLink(BinFile<TrieNode> &nodes, unsigned char initialCharacter,
                                                              const TriePointer &childPointer)
 {
     unsigned char currentCharacter = initialCharacter;
@@ -79,7 +84,7 @@ unsigned char TrieNode<ValueType>::checkLeftmostCharWithLink(unsigned char initi
 }
 
 template<typename ValueType>
-unsigned char TrieNode<ValueType>::checkRightmostCharWithLink(unsigned char initialCharacter,
+unsigned char TrieNode<ValueType>::checkRightmostCharWithLink(BinFile<TrieNode> &nodes, unsigned char initialCharacter,
                                                               const TriePointer &childPointer)
 {
     unsigned char currentCharacter = initialCharacter;
@@ -96,7 +101,7 @@ unsigned char TrieNode<ValueType>::checkRightmostCharWithLink(unsigned char init
 }
 
 template<typename ValueType>
-bool TrieNode<ValueType>::isPointerTheOnlyNonNullField(const TriePointer &childPointer)
+bool TrieNode<ValueType>::isPointerTheOnlyNonNullField(BinFile<TrieNode> &nodes, const TriePointer &childPointer)
 {
     for (int i = 0x00; i < NODE_SIZE; i++) {
         /* Yes, we check children and values in the same loop. */

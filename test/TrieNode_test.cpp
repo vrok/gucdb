@@ -8,6 +8,8 @@ using namespace std;
 #include "Slabs.h"
 #include "gtest/gtest.h"
 
+#define BIN_FILE_TEST_OVERRIDE
+
 namespace {
 
 class TrieLeafTest: public ::testing::Test {

@@ -5,8 +5,6 @@
  *      Author: m
  */
 
-#include "TrieNode.h"
-
 #include "SystemParams.h"
 
 #include <unistd.h>

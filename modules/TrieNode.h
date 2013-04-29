@@ -19,38 +19,45 @@ template<typename ValueType>
 struct TrieNode {
     typedef ExponentialAllocator<TrieNode<ValueType> > AllocatorType;
 
-    void setChildPointer(unsigned char character, const TriePointer &childPointer);
+    void setChildPointer(BinFile<TrieNode> &nodes,
+                         unsigned char character, const TriePointer &childPointer);
 
-    TriePointer &getChildPointer(unsigned char character)
+    TriePointer &getChildPointer(BinFile<TrieNode> &nodes, unsigned char character)
     { return children[character]; } // Note that there are no safety checks here.
 
-    void setChildrenRange(unsigned char firstCharacter,
-                          unsigned char lastCharacter,
-                          const TriePointer &childPointer);
+    void setChildrenRange(BinFile<TrieNode> &nodes, unsigned char firstCharacter,
+                          unsigned char lastCharacter, const TriePointer &childPointer);
 
-    bool isLinkPure(unsigned char character);
+    bool isLinkPure(BinFile<TrieNode> &nodes, unsigned char character);
 
-    unsigned char checkLeftmostCharWithLink(unsigned char initialCharacter,
+    unsigned char checkLeftmostCharWithLink(BinFile<TrieNode> &nodes,
+                                            unsigned char initialCharacter,
                                             const TriePointer &childPointer);
 
-    unsigned char checkRightmostCharWithLink(unsigned char initialCharacter,
+    unsigned char checkRightmostCharWithLink(BinFile<TrieNode> &nodes,
+                                             unsigned char initialCharacter,
                                              const TriePointer &childPointer);
 
-    bool isPointerTheOnlyNonNullField(const TriePointer &childPointer);
+    bool isPointerTheOnlyNonNullField(BinFile<TrieNode> &nodes,
+                                      const TriePointer &childPointer);
 
-    void setValue(unsigned char character, ValueType &value)
+    void setValue(BinFile<TrieNode> &nodes, unsigned char character, ValueType &value)
     { values[character] = value; }
 
     template<typename ConvertableToValueType>
-    void setValue(unsigned char character, ConvertableToValueType value)
+    void setValue(BinFile<TrieNode> &nodes, unsigned char character, ConvertableToValueType value)
     { values[character] = value; }
 
-    ValueType & getValue(unsigned char character)
+    ValueType & getValue(BinFile<TrieNode> &nodes, unsigned char character)
     { return values[character]; }
 
 private:
     TriePointer children[NODE_SIZE];
-    ValueType values[NODE_SIZE];
+
+    union {
+        ValueType values[NODE_SIZE];
+        TriePointer grandChildrenCache[NODE_SIZE];
+    };
 };
 
 } /* namespace Db */

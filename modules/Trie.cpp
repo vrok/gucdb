@@ -6,10 +6,10 @@
  */
 
 #include "SystemParams.h"
-#include "TrieNode.h"
-#include "MMapedFile.h"
 #include "BinFile.h"
 #include "BinFileMap.h"
+#include "TrieNode.h"
+#include "MMapedFile.h"
 #include "Slabs.h"
 
 #include "Trie.h"
@@ -86,7 +86,7 @@ void Trie<ValueType>::initializeEmpty()
         return;
     }
 
-    rootNode->setChildrenRange(0x00, 0xff, TriePointer(true, leafID));
+    rootNode->setChildrenRange(*nodes, 0x00, 0xff, TriePointer(true, leafID));
 }
 
 template<typename ValueType>
@@ -97,7 +97,7 @@ ValueType Trie<ValueType>::get(const DatabaseKey &key)
     TrieNode<ValueType> *currentNode = nodes->getBin(0);
 
     while (true) {
-        TriePointer *currentPointer = &currentNode->getChildPointer(key[currentCharIdx]);
+        TriePointer *currentPointer = &currentNode->getChildPointer(*nodes, key[currentCharIdx]);
 
         if (currentPointer->isNull()) {
             return 0;
@@ -107,7 +107,7 @@ ValueType Trie<ValueType>::get(const DatabaseKey &key)
             currentNode = nodes->getBin(currentPointer->link);
 
             if (currentCharIdx == key.getLength()) {
-                return currentNode->getValue(key[currentCharIdx - 1]);
+                return currentNode->getValue(*nodes, key[currentCharIdx - 1]);
             }
         } else {
             TrieLeaf<ValueType> *leaf = leaves->getBin(currentPointer->link);
@@ -126,19 +126,19 @@ void Trie<ValueType>::addKey(const DatabaseKey &key, ValueType value)
     TrieNode<ValueType> *currentNode = nodes->getBin(0); /* Root node always has id = 0 */
 
     while (true) {
-        bool isLinkPure = currentNode->isLinkPure(key[currentCharIdx]);
-        TriePointer *currentPointer = &currentNode->getChildPointer(key[currentCharIdx]);
+        bool isLinkPure = currentNode->isLinkPure(*nodes, key[currentCharIdx]);
+        TriePointer *currentPointer = &currentNode->getChildPointer(*nodes, key[currentCharIdx]);
 
         if (currentPointer->isNull()) {
-            unsigned char leftmostCharWithCurrentLink = currentNode->checkLeftmostCharWithLink(key[currentCharIdx],
+            unsigned char leftmostCharWithCurrentLink = currentNode->checkLeftmostCharWithLink(*nodes, key[currentCharIdx],
                                                                                                *currentPointer);
-            unsigned char rightmostCharWithCurrentLink = currentNode->checkRightmostCharWithLink(key[currentCharIdx],
+            unsigned char rightmostCharWithCurrentLink = currentNode->checkRightmostCharWithLink(*nodes, key[currentCharIdx],
                                                                                                  *currentPointer);
 
             unsigned long long newLeafId = leaves->getNewBinByID();
             TrieLeaf<ValueType> *newLeaf = leaves->getBin(newLeafId);
 
-            currentNode->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink,
+            currentNode->setChildrenRange(*nodes, leftmostCharWithCurrentLink, rightmostCharWithCurrentLink,
                                           TriePointer(true, newLeafId));
 
             newLeaf->add(key, currentCharIdx, value);
@@ -153,7 +153,7 @@ void Trie<ValueType>::addKey(const DatabaseKey &key, ValueType value)
                  * node yet. We'll set the value pointer in the non-leaf node.
                  */
 
-                currentNode->setValue(key[currentCharIdx - 1], value);
+                currentNode->setValue(*nodes, key[currentCharIdx - 1], value);
                 return;
             }
         } else {
@@ -182,8 +182,8 @@ void Trie<ValueType>::addKey(const DatabaseKey &key, ValueType value)
                 TrieNode<ValueType> *newNode = nodes->getBin(newNodeIndex);
                 currentPointer->leaf = 0;
                 currentPointer->link = newNodeIndex;
-                newNode->setValue(key[currentCharIdx], newNodeValue);
-                newNode->setChildrenRange(0x00, 0xff, newPointer);
+                newNode->setValue(*nodes, key[currentCharIdx], newNodeValue);
+                newNode->setChildrenRange(*nodes, 0x00, 0xff, newPointer);
 
                 currentCharIdx++;
                 currentNode = newNode;
@@ -192,16 +192,16 @@ void Trie<ValueType>::addKey(const DatabaseKey &key, ValueType value)
                     /* It might happen that the word ends exactly at the fresh node
                      * TODO: we overwrite value
                      */
-                    currentNode->setValue(key[currentCharIdx - 1], value);
+                    currentNode->setValue(*nodes, key[currentCharIdx - 1], value);
                     return;
                 }
             } else {
                 unsigned long long newLeafId = leaves->getNewBinByID();
                 TrieLeaf<ValueType> *newLeaf = leaves->getBin(newLeafId);
 
-                unsigned char leftmostCharWithCurrentLink = currentNode->checkLeftmostCharWithLink(key[currentCharIdx],
+                unsigned char leftmostCharWithCurrentLink = currentNode->checkLeftmostCharWithLink(*nodes, key[currentCharIdx],
                                                                                                    *currentPointer);
-                unsigned char rightmostCharWithCurrentLink = currentNode->checkRightmostCharWithLink(key[currentCharIdx],
+                unsigned char rightmostCharWithCurrentLink = currentNode->checkRightmostCharWithLink(*nodes, key[currentCharIdx],
                                                                                                      *currentPointer);
 
                 unsigned char splitPoint = leaf->findBestSplitPoint(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink);
@@ -216,16 +216,16 @@ void Trie<ValueType>::addKey(const DatabaseKey &key, ValueType value)
 
                 if (newLeaf->isEmpty()) {
                     leaves->freeBin(newLeafId);
-                    currentNode->setChildrenRange(leftmostCharWithCurrentLink, splitPoint - 1, TriePointer());
+                    currentNode->setChildrenRange(*nodes, leftmostCharWithCurrentLink, splitPoint - 1, TriePointer());
                 } else {
-                    currentNode->setChildrenRange(leftmostCharWithCurrentLink, splitPoint - 1, TriePointer(true, newLeafId));
+                    currentNode->setChildrenRange(*nodes, leftmostCharWithCurrentLink, splitPoint - 1, TriePointer(true, newLeafId));
                 }
 
                 if (leaf->isEmpty()) {
                     leaves->freeBin(currentPointerCopy.link);
-                    currentNode->setChildrenRange(splitPoint, rightmostCharWithCurrentLink, TriePointer());
+                    currentNode->setChildrenRange(*nodes, splitPoint, rightmostCharWithCurrentLink, TriePointer());
                 } else {
-                    currentNode->setChildrenRange(splitPoint, rightmostCharWithCurrentLink, currentPointerCopy);
+                    currentNode->setChildrenRange(*nodes, splitPoint, rightmostCharWithCurrentLink, currentPointerCopy);
                 }
             }
         }
@@ -242,16 +242,16 @@ bool Trie<ValueType>::deleteKeyAndJustDecideIfShouldCleanUpTrie(const DatabaseKe
     TriePointer *currentPointer;
 
     while (currentCharIdx < key.getLength()) {
-        currentPointer = &currentNode->getChildPointer(key[currentCharIdx]);
+        currentPointer = &currentNode->getChildPointer(*nodes, key[currentCharIdx]);
 
         if (currentPointer->leaf == 0) {
             currentCharIdx++;
             currentNode = nodes->getBin(currentPointer->link);
 
             if (currentCharIdx == key.getLength()) {
-                currentNode->setValue(key[currentCharIdx - 1], 0);
+                currentNode->setValue(*nodes, key[currentCharIdx - 1], 0);
 
-                if (! currentNode->isPointerTheOnlyNonNullField(TriePointer())) {
+                if (! currentNode->isPointerTheOnlyNonNullField(*nodes, TriePointer())) {
                     return false;
                 }
             } else {
@@ -278,8 +278,8 @@ void Trie<ValueType>::cleanUpTrieAfterKeyRemoval(const DatabaseKey &key, const v
     int nodeCount = pathToRemoved.size();
 
     for (int i = nodeCount - 1; i >= 0; --i) {
-        TriePointer &currentLink = pathToRemoved[i]->getChildPointer(key[i]);
-        bool shouldContinue = pathToRemoved[i]->isPointerTheOnlyNonNullField(currentLink);
+        TriePointer &currentLink = pathToRemoved[i]->getChildPointer(*nodes, key[i]);
+        bool shouldContinue = pathToRemoved[i]->isPointerTheOnlyNonNullField(*nodes, currentLink);
 
         if (shouldContinue) {
             if (currentLink.leaf == 1) {
@@ -288,28 +288,28 @@ void Trie<ValueType>::cleanUpTrieAfterKeyRemoval(const DatabaseKey &key, const v
                 nodes->freeBin(currentLink.link);
             }
 
-            pathToRemoved[i]->setChildrenRange(0x00, 0xff, TriePointer());
+            pathToRemoved[i]->setChildrenRange(*nodes, 0x00, 0xff, TriePointer());
         } else {
-            unsigned char leftmostCharWithCurrentLink = pathToRemoved[i]->checkLeftmostCharWithLink(key[i], currentLink);
-            unsigned char rightmostCharWithCurrentLink = pathToRemoved[i]->checkRightmostCharWithLink(key[i], currentLink);
+            unsigned char leftmostCharWithCurrentLink = pathToRemoved[i]->checkLeftmostCharWithLink(*nodes, key[i], currentLink);
+            unsigned char rightmostCharWithCurrentLink = pathToRemoved[i]->checkRightmostCharWithLink(*nodes, key[i], currentLink);
 
             /* We could just fill pointers from the leftmost to the rightmost matched char with zeros,
              * but we want to maximally fill the leaves we have, so try to merge the pointers with
              * their neighbours (provided that these neighbours are linked to leafs (i.e. they are not pure)).
              */
-            if ((leftmostCharWithCurrentLink > 0) && !pathToRemoved[i]->getChildPointer(leftmostCharWithCurrentLink - 1).isNull()
-                    && !pathToRemoved[i]->isLinkPure(leftmostCharWithCurrentLink - 1)) {
+            if ((leftmostCharWithCurrentLink > 0) && !pathToRemoved[i]->getChildPointer(*nodes, leftmostCharWithCurrentLink - 1).isNull()
+                    && !pathToRemoved[i]->isLinkPure(*nodes, leftmostCharWithCurrentLink - 1)) {
 
-                pathToRemoved[i]->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink,
-                                          pathToRemoved[i]->getChildPointer(leftmostCharWithCurrentLink - 1));
+                pathToRemoved[i]->setChildrenRange(*nodes, leftmostCharWithCurrentLink, rightmostCharWithCurrentLink,
+                                          pathToRemoved[i]->getChildPointer(*nodes, leftmostCharWithCurrentLink - 1));
             } else
-            if ((rightmostCharWithCurrentLink < 0xff) && !pathToRemoved[i]->getChildPointer(rightmostCharWithCurrentLink + 1).isNull()
-                    && !pathToRemoved[i]->isLinkPure(rightmostCharWithCurrentLink + 1)) {
+            if ((rightmostCharWithCurrentLink < 0xff) && !pathToRemoved[i]->getChildPointer(*nodes, rightmostCharWithCurrentLink + 1).isNull()
+                    && !pathToRemoved[i]->isLinkPure(*nodes, rightmostCharWithCurrentLink + 1)) {
 
-                pathToRemoved[i]->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink,
-                                          pathToRemoved[i]->getChildPointer(rightmostCharWithCurrentLink + 1));
+                pathToRemoved[i]->setChildrenRange(*nodes, leftmostCharWithCurrentLink, rightmostCharWithCurrentLink,
+                                          pathToRemoved[i]->getChildPointer(*nodes, rightmostCharWithCurrentLink + 1));
             } else {
-                pathToRemoved[i]->setChildrenRange(leftmostCharWithCurrentLink, rightmostCharWithCurrentLink, TriePointer());
+                pathToRemoved[i]->setChildrenRange(*nodes, leftmostCharWithCurrentLink, rightmostCharWithCurrentLink, TriePointer());
             }
 
             break;
@@ -356,9 +356,9 @@ void Trie<ValueType>::dump()
         cout << ind << "<node id=\"" << currentId << "\">" << endl;
 
         for (int currentChar = 0x00; currentChar <= 0xff; currentChar++) {
-            if (currentNode->getValue(currentChar) != 0) {
+            if (currentNode->getValue(*nodes, currentChar) != 0) {
                 cout << ind << ind << "<key char=\"" << currentChar
-                     << "\" value=\"" << currentNode->getValue(currentChar) << "\" />" << endl;
+                     << "\" value=\"" << currentNode->getValue(*nodes, currentChar) << "\" />" << endl;
             }
         }
 
@@ -368,7 +368,7 @@ void Trie<ValueType>::dump()
             /* We can't use uchar in the loop, we would fall into infinite loop. */
             unsigned char currentChar = (unsigned char) currentCharIdx;
 
-            TriePointer *currentPointer = &currentNode->getChildPointer(currentChar);
+            TriePointer *currentPointer = &currentNode->getChildPointer(*nodes, currentChar);
 
             if ((currentCharIdx == 0x00) || (*prevPointer != *currentPointer)) {
                 cout << ind << ind << "<from character=\"" << (int)currentChar;
