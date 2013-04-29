@@ -53,6 +53,26 @@ for test in comparative_tests:
                 LINKFLAGS=['-pthread'],
                 LIBS=test.get_libs_list(), LIBPATH='.') 
 
+
+class SpecialWish:
+
+    def __init__(self, target_name, excludes_list):
+        self._target_name = target_name
+        self._excludes_list = excludes_list
+
+    def get_target_name(self):
+        return self._target_name
+
+    def get_excludes_list(self):
+        return self._excludes_list
+
+
+special_wishes = [ SpecialWish('trie_node_test', ['modules/BinFile.cpp', 'modules/BinFileMap.cpp']) ]
+
+special_wishes_map = {}
+for wish in special_wishes:
+    special_wishes_map[wish.get_target_name()] = wish
+
 # Prepare unit tests targets (i.e. 'trie_leaf_test', 'trie_node_test').
 # Such target builds a binary which tests a single module.
 for module in modules:
@@ -67,9 +87,18 @@ for module in modules:
                               module.rstrip('.cpp')) \
                        .strip('_')
 
-    env.Program(target=base_module_name + '_test',
+    modules_lib_name = 'modules_lib'
+
+    target_name = base_module_name + '_test'
+
+    if target_name in special_wishes_map:
+        wish = special_wishes_map[target_name]
+        modules_lib_name += '_' + base_module_name
+        env.StaticLibrary(target=modules_lib_name, source=filter(lambda x: x not in wish.get_excludes_list(), modules_full))
+
+    env.Program(target=target_name,
                 source=[test_file_name],
                 CPPPATH=['modules', GTEST_DIR, GTEST_DIR + 'include', GMOCK_DIR, GMOCK_DIR + 'include'],
                 LINKFLAGS=['-pthread'],
-                LIBS=['modules_lib', 'gtest_lib'], LIBPATH='.') 
+                LIBS=[modules_lib_name, 'gtest_lib'], LIBPATH='.') 
 

@@ -25,8 +25,8 @@ struct TrieNode {
     void setChildPointer(BinFile<TrieNode> &nodes,
                          unsigned char character, const TriePointer &childPointer);
 
-    TriePointer &getChildPointer(BinFile<TrieNode> &nodes, unsigned char character)
-    { return children[character]; } // Note that there are no safety checks here.
+    TriePointer &getChildPointer(BinFile<TrieNode> &nodes,
+                                 unsigned char character);
 
     void setChildrenRange(BinFile<TrieNode> &nodes, unsigned char firstCharacter,
                           unsigned char lastCharacter, const TriePointer &childPointer);
@@ -55,6 +55,10 @@ struct TrieNode {
     { return values[character]; }
 
 private:
+
+    void tryCaching(BinFile<TrieNode> &nodes, char character);
+    bool areAnyValuesSet();
+
     TriePointer children[NODE_SIZE];
 
     union {

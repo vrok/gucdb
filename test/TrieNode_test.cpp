@@ -3,6 +3,7 @@
 #include <sstream>
 #include <map>
 #include <memory>
+#include <iostream>
 using namespace std;
 
 #include "TriePointer.h"
@@ -16,28 +17,42 @@ public:
 
     BinFile() : topID(1) {}
 
-    BinType *getBin(unsigned long id) {
-        return innerMap(id);
-    }
+    BinType *getBin(unsigned long id);
 
-    unsigned long long getNewBinByID() {
-        unsigned long long id = topID++;
-        innerMap[id] = new BinType();
-        return id;
-    }
+    unsigned long long getNewBinByID();
 
-    void freeBin(unsigned long id) {
-
-    }
+    void freeBin(unsigned long id);
 
 private:
     map<unsigned long, unique_ptr<BinType> > innerMap;
     unsigned long long topID;
 };
+
+template<typename BinType>
+BinType *BinFile<BinType>::getBin(unsigned long id) {
+    return innerMap[id].get();
+}
+
+template<typename BinType>
+unsigned long long BinFile<BinType>::getNewBinByID() {
+    unsigned long long id = topID++;
+    innerMap[id].reset(new BinType());
+    return id;
+}
+
+template<typename BinType>
+void BinFile<BinType>::freeBin(unsigned long id) {
+
+}
+
 }
 
 #define BIN_FILE_TEST_OVERRIDE
 #include "TrieNode.h"
+
+namespace Db {
+    template class BinFile<TrieNode<ObjectID> >;
+}
 
 namespace {
 
@@ -155,13 +170,33 @@ TEST_F(TrieLeafTest, TestPointerIsTheOnlyNonNullField)
     ASSERT_TRUE(node.isPointerTheOnlyNonNullField(nodesFile, pointer));
 }
 
-TEST_F(TrieLeafTest, TestPointerIsNotTheOnlyNonNullField)
+TEST_F(TrieLeafTest, TestPointerIsNotTheOnlyNonNullField_Sparse)
 {
     Db::TriePointer pointer1(false, 12345);
     Db::TriePointer pointer2(false, 54321);
 
     node.setChildrenRange(nodesFile, 10, 20, pointer1);
     node.setChildrenRange(nodesFile, 50, 100, pointer2);
+
+    ASSERT_FALSE(node.isPointerTheOnlyNonNullField(nodesFile, pointer1));
+}
+
+TEST_F(TrieLeafTest, TestPointerIsNotTheOnlyNonNullField_Dense)
+{
+    Db::TriePointer pointer(false, 12345);
+
+    node.setChildrenRange(nodesFile, 0xa0, 0xaf, pointer);
+
+    ASSERT_TRUE(node.isPointerTheOnlyNonNullField(nodesFile, pointer));
+}
+
+TEST_F(TrieLeafTest, TestPointerIsNotTheOnlyNonNullField_Dense2)
+{
+    Db::TriePointer pointer1(false, 12345);
+    Db::TriePointer pointer2(false, 54321);
+
+    node.setChildrenRange(nodesFile, 0xa0, 0xaf, pointer1);
+    node.setChildrenRange(nodesFile, 0xb0, 0xbf, pointer2);
 
     ASSERT_FALSE(node.isPointerTheOnlyNonNullField(nodesFile, pointer1));
 }
