@@ -17,6 +17,9 @@ const size_t NODE_SIZE = 0xff + 1;
 
 template<typename ValueType>
 struct TrieNode {
+
+    TrieNode() {}
+
     typedef ExponentialAllocator<TrieNode<ValueType> > AllocatorType;
 
     void setChildPointer(BinFile<TrieNode> &nodes,

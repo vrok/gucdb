@@ -1,21 +1,53 @@
 #include <cstring>
 #include <string>
 #include <sstream>
+#include <map>
+#include <memory>
 using namespace std;
 
-#include "TrieNode.h"
 #include "TriePointer.h"
-#include "Slabs.h"
+#include "ObjectID.h"
 #include "gtest/gtest.h"
 
+namespace Db {
+template <typename BinType>
+class BinFile {
+public:
+
+    BinFile() : topID(1) {}
+
+    BinType *getBin(unsigned long id) {
+        return innerMap(id);
+    }
+
+    unsigned long long getNewBinByID() {
+        unsigned long long id = topID++;
+        innerMap[id] = new BinType();
+        return id;
+    }
+
+    void freeBin(unsigned long id) {
+
+    }
+
+private:
+    map<unsigned long, unique_ptr<BinType> > innerMap;
+    unsigned long long topID;
+};
+}
+
 #define BIN_FILE_TEST_OVERRIDE
+#include "TrieNode.h"
 
 namespace {
 
 class TrieLeafTest: public ::testing::Test {
 protected:
 
-    Db::TrieNode<Db::ObjectID> node;
+    typedef Db::TrieNode<Db::ObjectID> NodeType;
+
+    NodeType node;
+    Db::BinFile<NodeType> nodesFile;
 
     TrieLeafTest() {
     }
@@ -35,92 +67,92 @@ TEST_F(TrieLeafTest, TestCheckLeftmostCharWithLink)
 {
     Db::TriePointer pointer(true, 12345);
 
-    node.setChildrenRange(40, 80, pointer);
+    node.setChildrenRange(nodesFile, 40, 80, pointer);
 
-    ASSERT_EQ(40, node.checkLeftmostCharWithLink(55, pointer));
+    ASSERT_EQ(40, node.checkLeftmostCharWithLink(nodesFile, 55, pointer));
 }
 
 TEST_F(TrieLeafTest, TestCheckRightmostCharWithLink)
 {
     Db::TriePointer pointer(true, 12345);
 
-    node.setChildrenRange(40, 80, pointer);
+    node.setChildrenRange(nodesFile, 40, 80, pointer);
 
-    ASSERT_EQ(80, node.checkRightmostCharWithLink(55, pointer));
+    ASSERT_EQ(80, node.checkRightmostCharWithLink(nodesFile, 55, pointer));
 }
 
 TEST_F(TrieLeafTest, TestCheckRightmostLeftmostBounds)
 {
     Db::TriePointer pointer(true, 12345);
 
-    node.setChildrenRange(0, 0xff - 1, pointer);
+    node.setChildrenRange(nodesFile, 0, 0xff - 1, pointer);
 
-    ASSERT_EQ(0, node.checkLeftmostCharWithLink(55, pointer));
-    ASSERT_EQ(0xff - 1, node.checkRightmostCharWithLink(55, pointer));
+    ASSERT_EQ(0, node.checkLeftmostCharWithLink(nodesFile, 55, pointer));
+    ASSERT_EQ(0xff - 1, node.checkRightmostCharWithLink(nodesFile, 55, pointer));
 }
 
 TEST_F(TrieLeafTest, TestIsLinkPureLeftmost)
 {
     Db::TriePointer pointer(true, 12345);
 
-    node.setChild(0, pointer);
-    ASSERT_EQ(true, node.isLinkPure(0));
+    node.setChildPointer(nodesFile, 0, pointer);
+    ASSERT_TRUE(node.isLinkPure(nodesFile, 0));
 
-    node.setChild(1, pointer);
-    ASSERT_EQ(false, node.isLinkPure(0));
+    node.setChildPointer(nodesFile, 1, pointer);
+    ASSERT_FALSE(node.isLinkPure(nodesFile, 0));
 }
 
 TEST_F(TrieLeafTest, TestIsLinkPureRightmost)
 {
     Db::TriePointer pointer(true, 12345);
 
-    node.setChild(0xff - 1, pointer);
-    ASSERT_EQ(true, node.isLinkPure(0xff - 1));
+    node.setChildPointer(nodesFile, 0xff - 1, pointer);
+    ASSERT_TRUE(node.isLinkPure(nodesFile, 0xff - 1));
 
-    node.setChild(0xff - 2, pointer);
-    ASSERT_EQ(false, node.isLinkPure(0xff - 1));
+    node.setChildPointer(nodesFile, 0xff - 2, pointer);
+    ASSERT_FALSE(node.isLinkPure(nodesFile, 0xff - 1));
 }
 
 TEST_F(TrieLeafTest, TestIsLinkPureMiddleOnlyLeft)
 {
     Db::TriePointer pointer(true, 12345);
 
-    node.setChild(40, pointer);
-    ASSERT_EQ(true, node.isLinkPure(40));
+    node.setChildPointer(nodesFile, 40, pointer);
+    ASSERT_TRUE(node.isLinkPure(nodesFile, 40));
 
-    node.setChild(39, pointer);
-    ASSERT_EQ(false, node.isLinkPure(40));
+    node.setChildPointer(nodesFile, 39, pointer);
+    ASSERT_FALSE(node.isLinkPure(nodesFile, 40));
 }
 
 TEST_F(TrieLeafTest, TestIsLinkPureMiddleOnlyRight)
 {
     Db::TriePointer pointer(true, 12345);
 
-    node.setChild(40, pointer);
-    ASSERT_EQ(true, node.isLinkPure(40));
+    node.setChildPointer(nodesFile, 40, pointer);
+    ASSERT_TRUE(node.isLinkPure(nodesFile, 40));
 
-    node.setChild(41, pointer);
-    ASSERT_EQ(false, node.isLinkPure(40));
+    node.setChildPointer(nodesFile, 41, pointer);
+    ASSERT_FALSE(node.isLinkPure(nodesFile, 40));
 }
 
 TEST_F(TrieLeafTest, TestIsLinkPureMiddleBoth)
 {
     Db::TriePointer pointer(true, 12345);
 
-    node.setChild(40, pointer);
-    ASSERT_EQ(true, node.isLinkPure(40));
+    node.setChildPointer(nodesFile, 40, pointer);
+    ASSERT_TRUE(node.isLinkPure(nodesFile, 40));
 
-    node.setChildrenRange(39, 41, pointer);
-    ASSERT_EQ(false, node.isLinkPure(40));
+    node.setChildrenRange(nodesFile, 39, 41, pointer);
+    ASSERT_FALSE(node.isLinkPure(nodesFile, 40));
 }
 
 TEST_F(TrieLeafTest, TestPointerIsTheOnlyNonNullField)
 {
     Db::TriePointer pointer(false, 12345);
 
-    node.setChildrenRange(10, 20, pointer);
+    node.setChildrenRange(nodesFile, 10, 20, pointer);
 
-    ASSERT_TRUE(node.isPointerTheOnlyNonNullField(pointer));
+    ASSERT_TRUE(node.isPointerTheOnlyNonNullField(nodesFile, pointer));
 }
 
 TEST_F(TrieLeafTest, TestPointerIsNotTheOnlyNonNullField)
@@ -128,10 +160,10 @@ TEST_F(TrieLeafTest, TestPointerIsNotTheOnlyNonNullField)
     Db::TriePointer pointer1(false, 12345);
     Db::TriePointer pointer2(false, 54321);
 
-    node.setChildrenRange(10, 20, pointer1);
-    node.setChildrenRange(50, 100, pointer2);
+    node.setChildrenRange(nodesFile, 10, 20, pointer1);
+    node.setChildrenRange(nodesFile, 50, 100, pointer2);
 
-    ASSERT_FALSE(node.isPointerTheOnlyNonNullField(pointer1));
+    ASSERT_FALSE(node.isPointerTheOnlyNonNullField(nodesFile, pointer1));
 }
 
 }
