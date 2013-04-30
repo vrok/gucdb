@@ -163,7 +163,7 @@ void TrieNode<ValueType>::setChildrenRange(BinFile<TrieNode> &nodes,
     } else {
         setChildrenRange(nodes, firstCharacter, (getUpperHalf(firstCharacter) << 4) | 0x0f, childPointer);
 
-        char fromNibble = getUpperHalf(lastCharacter) + 1;
+        char fromNibble = getUpperHalf(firstCharacter) + 1;
         char toNibble = getUpperHalf(lastCharacter) - 1;
 
         for (char nibble = fromNibble; nibble <= toNibble; nibble++) {
@@ -219,17 +219,31 @@ template<typename ValueType>
 unsigned char TrieNode<ValueType>::checkLeftmostCharWithLink(BinFile<TrieNode> &nodes, unsigned char initialCharacter,
                                                              const TriePointer &childPointer)
 {
-    unsigned char currentCharacter = initialCharacter;
+    int currentCharacter = static_cast<int>(initialCharacter);
 
-    while (children[currentCharacter] == childPointer) {
-        if (currentCharacter == 0) {
-            return currentCharacter;
+    int upperHalf = static_cast<int>(getUpperHalf(currentCharacter));
+    int lowerHalf = static_cast<int>(getLowerHalf(currentCharacter));
+
+    while (currentCharacter >= 0) {
+        TriePointer childID = children[upperHalf];
+
+        if (children[upperHalf].isNull()) {
+            if (grandChildrenCache[upperHalf] != childPointer)
+                return currentCharacter + 1;
+
+            upperHalf--;
+            lowerHalf = 0x0f;
+            currentCharacter = (currentCharacter & 0xf0) - 1;
+        } else {
+            TrieNode *childNode = nodes.getBin(childID.link);
+            do {
+                if (childNode->children[lowerHalf] != childPointer) {
+                    return currentCharacter + 1;
+                }
+                currentCharacter--;
+            } while (lowerHalf-- > 0);
         }
-
-        currentCharacter--;
     }
-
-    return currentCharacter + 1;
 }
 
 template<typename ValueType>
