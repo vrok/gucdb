@@ -180,6 +180,8 @@ void TrieNode<ValueType>::setChildrenRange(BinFile<TrieNode> &nodes,
             }
         }
 
+        grandChildrenCache[upperHalf] = TriePointer();
+
         assert(0 == children[upperHalf].leaf);
 
         TrieNode *child = nodes.getBin(childID.link);
