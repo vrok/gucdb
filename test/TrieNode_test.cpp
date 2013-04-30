@@ -36,7 +36,9 @@ BinType *BinFile<BinType>::getBin(unsigned long id) {
 template<typename BinType>
 unsigned long long BinFile<BinType>::getNewBinByID() {
     unsigned long long id = topID++;
-    innerMap[id].reset(new BinType());
+    BinType *bt = new BinType();
+    memset(bt, 0, sizeof(BinType));
+    innerMap[id].reset(bt);
     return id;
 }
 

@@ -302,17 +302,36 @@ unsigned char TrieNode<ValueType>::checkRightmostCharWithLink(BinFile<TrieNode> 
 }
 
 template<typename ValueType>
-bool TrieNode<ValueType>::isPointerTheOnlyNonNullField(BinFile<TrieNode> &nodes, const TriePointer &childPointer)
+bool TrieNode<ValueType>::isPointerTheOnlyNonNullField(BinFile<TrieNode> &nodes,
+                                                       const TriePointer &childPointer)
 {
     for (int i = 0x00; i < NODE_SIZE; i++) {
         /* Yes, we check children and values in the same loop. */
 
-        if (!children[i].isNull() && children[i] != childPointer) {
-            return false;
+        TriePointer childID = children[i];
+
+        if (childID.isNull()) {
+            if (!grandChildrenCache[i].isNull() &&
+                grandChildrenCache[i] != childPointer)
+            {
+                return false;
+            }
+
+            continue;
         }
 
-        if (values[i] != 0) {
-            return false;
+        TrieNode *child = nodes.getBin(childID.link);
+
+        for (int j = 0x00; j < NODE_SIZE; j++) {
+            /* Yes, we check children and values in the same loop. */
+
+            if (!child->children[j].isNull() && child->children[j] != childPointer) {
+                return false;
+            }
+
+            if (child->values[j] != 0) {
+                return false;
+            }
         }
     }
 
