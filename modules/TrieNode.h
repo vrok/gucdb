@@ -13,7 +13,7 @@
 
 namespace Db {
 
-const size_t NODE_SIZE = 0xff + 1;
+const size_t NODE_SIZE = 0x0f + 1;
 
 template<typename ValueType>
 struct TrieNode {
@@ -44,19 +44,22 @@ struct TrieNode {
     bool isPointerTheOnlyNonNullField(BinFile<TrieNode> &nodes,
                                       const TriePointer &childPointer);
 
-    void setValue(BinFile<TrieNode> &nodes, unsigned char character, ValueType &value)
-    { values[character] = value; }
+    void setValue(BinFile<TrieNode> &nodes, unsigned char character,
+                  ValueType &value);
 
-    template<typename ConvertableToValueType>
-    void setValue(BinFile<TrieNode> &nodes, unsigned char character, ConvertableToValueType value)
-    { values[character] = value; }
+    void setValue(BinFile<TrieNode> &nodes, unsigned char character,
+                  ValueType &&value)
+    {
+        // This should be used just for simple types.
+        ValueType v = value;
+        setValue(nodes, character, v);
+    }
 
-    ValueType & getValue(BinFile<TrieNode> &nodes, unsigned char character)
-    { return values[character]; }
+    ValueType & getValue(BinFile<TrieNode> &nodes, unsigned char character);
 
 private:
 
-    void tryCaching(BinFile<TrieNode> &nodes, char character);
+    void tryCaching(BinFile<TrieNode> &nodes, unsigned char character);
     bool areAnyValuesSet();
 
     template<typename Crawler>

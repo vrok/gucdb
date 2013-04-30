@@ -201,6 +201,48 @@ TEST_F(TrieLeafTest, TestPointerIsNotTheOnlyNonNullField_Dense2)
     ASSERT_FALSE(node.isPointerTheOnlyNonNullField(nodesFile, pointer1));
 }
 
+TEST_F(TrieLeafTest, TestSetGetValue)
+{
+    node.setValue(nodesFile, 'a', 1);
+    node.setValue(nodesFile, 'b', 2);
+    node.setValue(nodesFile, 'c', 3);
+
+    ASSERT_EQ(1, node.getValue(nodesFile, 'a'));
+    ASSERT_EQ(2, node.getValue(nodesFile, 'b'));
+    ASSERT_EQ(3, node.getValue(nodesFile, 'c'));
+}
+
+
+TEST_F(TrieLeafTest, TestSetGetValue_WithOpsBetween)
+{
+    node.setValue(nodesFile, 'a', 1);
+    node.setValue(nodesFile, 'b', 2);
+    node.setValue(nodesFile, 0xff, 3);
+
+    Db::TriePointer pointer(false, 12345);
+    node.setChildrenRange(nodesFile, '0', 'a', pointer);
+    node.setChildPointer(nodesFile, 'z', pointer);
+
+    ASSERT_EQ(1, node.getValue(nodesFile, 'a'));
+    ASSERT_EQ(2, node.getValue(nodesFile, 'b'));
+    ASSERT_EQ(3, node.getValue(nodesFile, 0xff));
+}
+
+TEST_F(TrieLeafTest, TestSetGetAllValues_WithOpsBetween)
+{
+    for (int i = 0; i <= 0xff; i++) {
+        node.setValue(nodesFile, static_cast<unsigned char>(i), i * 2);
+    }
+
+    Db::TriePointer pointer(false, 12345);
+    node.setChildrenRange(nodesFile, '0', 'a', pointer);
+    node.setChildPointer(nodesFile, 'z', pointer);
+
+    for (int i = 0; i <= 0xff; i++) {
+        ASSERT_EQ(i * 2, node.getValue(nodesFile, static_cast<unsigned char>(i)));
+    }
+}
+
 }
 
 int main(int argc, char **argv) {

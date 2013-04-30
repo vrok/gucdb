@@ -20,20 +20,21 @@
 
 namespace Db {
 
-inline unsigned char getUpperHalf(unsigned char ch)
+inline static unsigned char getUpperHalf(unsigned char ch)
 {
     return (ch & 0xf0) >> 4;
 }
 
-inline unsigned char getLowerHalf(unsigned char ch)
+inline static unsigned char getLowerHalf(unsigned char ch)
 {
     return ch & 0x0f;
 }
 
 template<typename ValueType>
-void TrieNode<ValueType>::tryCaching(BinFile<TrieNode> &nodes, char character)
+void TrieNode<ValueType>::tryCaching(BinFile<TrieNode> &nodes,
+                                     unsigned char character)
 {
-    char upperHalf = getUpperHalf(character);
+    unsigned char upperHalf = getUpperHalf(character);
 
     TriePointer &childID = children[upperHalf];
     TrieNode *child = nodes.getBin(childID.link);
@@ -56,6 +57,45 @@ void TrieNode<ValueType>::tryCaching(BinFile<TrieNode> &nodes, char character)
 }
 
 template<typename ValueType>
+void TrieNode<ValueType>::setValue(BinFile<TrieNode> &nodes,
+                                   unsigned char character,
+                                   ValueType &value)
+{
+    unsigned char upperHalf = getUpperHalf(character);
+
+    TriePointer &childID = children[upperHalf];
+
+    if (childID.isNull()) {
+        childID = TriePointer(false, nodes.getNewBinByID());
+        grandChildrenCache[upperHalf] = TriePointer();
+    }
+
+    TrieNode *child = nodes.getBin(childID.link);
+    child->values[getLowerHalf(character)] = value;
+
+    if (value == static_cast<ValueType>(0)) {
+        tryCaching(nodes, character);
+    }
+}
+
+template<typename ValueType>
+ValueType & TrieNode<ValueType>::getValue(BinFile<TrieNode> &nodes,
+                                          unsigned char character)
+{
+    unsigned char upperHalf = getUpperHalf(character);
+
+    TriePointer &childID = children[upperHalf];
+
+    if (childID.isNull()) {
+        static ValueType zero(0);
+        return zero;
+    }
+
+    TrieNode *child = nodes.getBin(childID.link);
+    return child->values[getLowerHalf(character)];
+}
+
+template<typename ValueType>
 bool TrieNode<ValueType>::areAnyValuesSet()
 {
     for (int i = 0; i < NODE_SIZE; i++) {
@@ -70,14 +110,14 @@ template<typename ValueType>
 void TrieNode<ValueType>::setChildPointer(BinFile<TrieNode> &nodes,
         unsigned char character, const TriePointer &childPointer)
 {
-    char upperHalf = getUpperHalf(character);
+    unsigned char upperHalf = getUpperHalf(character);
 
     if (grandChildrenCache[upperHalf] == childPointer) {
         /* It's already set in the cache. */
         return;
     }
 
-    char lowerHalf = getLowerHalf(character);
+    unsigned char lowerHalf = getLowerHalf(character);
 
     TriePointer childID = children[upperHalf];
     bool shouldTryCaching = true;
@@ -94,25 +134,16 @@ void TrieNode<ValueType>::setChildPointer(BinFile<TrieNode> &nodes,
     child->children[lowerHalf] = childPointer;
 
     if (shouldTryCaching) {
-        //for (int i = 0; i < NODE_SIZE; i++) {
-        //    if (child->children[i] != childPointer || child->values[i] != 0) {
-        //        return;
-        //    }
-        //}
-        //nodes.freeBin(childID.leaf);
-        //children[upperHalf] = TriePointer(false, 0);
-        //grandChildrenCache[upperHalf] = childPointer;
         tryCaching(nodes, character);
     }
-    //memcpy(&children[character], &childPointer, sizeof(TriePointer));
 }
 
 template<typename ValueType>
 TriePointer &TrieNode<ValueType>::getChildPointer(BinFile<TrieNode> &nodes,
                                                   unsigned char character)
 {
-    char upperHalf = getUpperHalf(character);
-    char lowerHalf = getLowerHalf(character);
+    unsigned char upperHalf = getUpperHalf(character);
+    unsigned char lowerHalf = getLowerHalf(character);
 
     if (children[upperHalf].isNull()) {
         return grandChildrenCache[upperHalf];
@@ -132,10 +163,10 @@ void TrieNode<ValueType>::setChildrenRange(BinFile<TrieNode> &nodes,
 
     if (getUpperHalf(firstCharacter) == getUpperHalf(lastCharacter)) {
 
-        char upperHalf = getUpperHalf(firstCharacter); // == getUpperHalf(lastCharacter)
+        unsigned char upperHalf = getUpperHalf(firstCharacter); // == getUpperHalf(lastCharacter)
 
-        char from = getLowerHalf(firstCharacter);
-        char to = getLowerHalf(lastCharacter);
+        unsigned char from = getLowerHalf(firstCharacter);
+        unsigned char to = getLowerHalf(lastCharacter);
 
         TriePointer childID = children[upperHalf];
         bool shouldTryCaching = true;
@@ -163,8 +194,8 @@ void TrieNode<ValueType>::setChildrenRange(BinFile<TrieNode> &nodes,
     } else {
         setChildrenRange(nodes, firstCharacter, (getUpperHalf(firstCharacter) << 4) | 0x0f, childPointer);
 
-        char fromNibble = getUpperHalf(firstCharacter) + 1;
-        char toNibble = getUpperHalf(lastCharacter) - 1;
+        unsigned char fromNibble = getUpperHalf(firstCharacter) + 1;
+        unsigned char toNibble = getUpperHalf(lastCharacter) - 1;
 
         for (char nibble = fromNibble; nibble <= toNibble; nibble++) {
             TriePointer &pointer = children[nibble];
