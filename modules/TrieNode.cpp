@@ -215,10 +215,33 @@ bool TrieNode<ValueType>::isLinkPure(BinFile<TrieNode> &nodes, unsigned char cha
     }
 }
 
-template<typename ValueType>
-unsigned char TrieNode<ValueType>::checkLeftmostCharWithLink(BinFile<TrieNode> &nodes, unsigned char initialCharacter,
-                                                             const TriePointer &childPointer)
+struct LeftCrawler
 {
+    int nextUpperHalf(int nibble) { return nibble - 1; }
+    int firstLowerHalf() { return 0x0f; }
+    int next(int character) { return character - 1; }
+    int prev(int character) { return character + 1; }
+    int wholeNibbleNext(int character) { return (character & 0xf0) - 1; }
+    bool decLowerHalf(int &nibble) { return nibble-- > 0; }
+};
+
+struct RightCrawler
+{
+    int nextUpperHalf(int nibble) { return nibble + 1; }
+    int firstLowerHalf() { return 0x00; }
+    int next(int character) { return character + 1; }
+    int prev(int character) { return character - 1; }
+    int wholeNibbleNext(int character) { return (character | 0x0f) + 1; }
+    bool decLowerHalf(int &nibble) { return nibble++ < 0x0f; }
+};
+
+template<typename ValueType>
+template<typename Crawler>
+unsigned char TrieNode<ValueType>::checkXmostCharWithLink(BinFile<TrieNode> &nodes, unsigned char initialCharacter,
+                                                          const TriePointer &childPointer)
+{
+    Crawler crawler;
+
     int currentCharacter = static_cast<int>(initialCharacter);
 
     int upperHalf = static_cast<int>(getUpperHalf(currentCharacter));
@@ -229,38 +252,35 @@ unsigned char TrieNode<ValueType>::checkLeftmostCharWithLink(BinFile<TrieNode> &
 
         if (children[upperHalf].isNull()) {
             if (grandChildrenCache[upperHalf] != childPointer)
-                return currentCharacter + 1;
+                return crawler.prev(currentCharacter);
 
-            upperHalf--;
-            lowerHalf = 0x0f;
-            currentCharacter = (currentCharacter & 0xf0) - 1;
+            upperHalf = crawler.nextUpperHalf(upperHalf);
+            lowerHalf = crawler.firstLowerHalf();
+            currentCharacter = crawler.wholeNibbleNext(currentCharacter);
         } else {
             TrieNode *childNode = nodes.getBin(childID.link);
             do {
                 if (childNode->children[lowerHalf] != childPointer) {
-                    return currentCharacter + 1;
+                    return crawler.prev(currentCharacter);
                 }
-                currentCharacter--;
-            } while (lowerHalf-- > 0);
+                currentCharacter = crawler.next(currentCharacter);
+            } while (crawler.decLowerHalf(lowerHalf));
         }
     }
+}
+
+template<typename ValueType>
+unsigned char TrieNode<ValueType>::checkLeftmostCharWithLink(BinFile<TrieNode> &nodes, unsigned char initialCharacter,
+                                                             const TriePointer &childPointer)
+{
+    checkXmostCharWithLink<LeftCrawler>(nodes, initialCharacter, childPointer);
 }
 
 template<typename ValueType>
 unsigned char TrieNode<ValueType>::checkRightmostCharWithLink(BinFile<TrieNode> &nodes, unsigned char initialCharacter,
                                                               const TriePointer &childPointer)
 {
-    unsigned char currentCharacter = initialCharacter;
-
-    while (children[currentCharacter] == childPointer) {
-        if (currentCharacter == (NODE_SIZE - 1)) {
-            return currentCharacter;
-        }
-
-        currentCharacter++;
-    }
-
-    return currentCharacter - 1;
+    checkXmostCharWithLink<RightCrawler>(nodes, initialCharacter, childPointer);
 }
 
 template<typename ValueType>

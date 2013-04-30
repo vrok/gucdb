@@ -59,6 +59,11 @@ private:
     void tryCaching(BinFile<TrieNode> &nodes, char character);
     bool areAnyValuesSet();
 
+    template<typename Crawler>
+    unsigned char checkXmostCharWithLink(BinFile<TrieNode> &nodes,
+                                         unsigned char initialCharacter,
+                                         const TriePointer &childPointer);
+
     TriePointer children[NODE_SIZE];
 
     union {
