@@ -217,32 +217,19 @@ void TrieNode<ValueType>::setChildrenRange(BinFile<TrieNode> &nodes,
 
         setChildrenRange(nodes, getUpperHalf(lastCharacter) << 4, lastCharacter, childPointer);
     }
-
-#if 0
-    for (int character = firstCharacter; character <= lastCharacter; ++character) {
-        /* We loop with int and then cast to uchar, because if we were
-         * setting the range [0, 255], we would end with an infinite loop.
-         */
-        memcpy(&children[(unsigned char) character], &childPointer, sizeof(TriePointer));
-    }
-#endif
 }
 
 template<typename ValueType>
 bool TrieNode<ValueType>::isLinkPure(BinFile<TrieNode> &nodes, unsigned char character)
 {
     if (character == 0) {
-        //return children[character + 1] != children[character];
         return getChildPointer(nodes, character + 1) != getChildPointer(nodes, character);
     } else
     if (character == (NODE_SIZE - 1)) {
-        //return children[character - 1] != children[character];
         return getChildPointer(nodes, character - 1) != getChildPointer(nodes, character);
     } else {
         return getChildPointer(nodes, character - 1) != getChildPointer(nodes, character) &&
                getChildPointer(nodes, character + 1) != getChildPointer(nodes, character);
-        //return (children[character - 1] != children[character]) &&
-        //       (children[character + 1] != children[character]);
     }
 }
 
