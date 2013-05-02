@@ -237,8 +237,6 @@ bool TrieNode<ValueType>::isLinkPure(BinFile<TrieNode> &nodes, unsigned char cha
 
 struct LeftCrawler
 {
-    int nextUpperHalf(int nibble) { return nibble - 1; }
-    int firstLowerHalf() { return 0x0f; }
     int next(int character) { return character - 1; }
     int prev(int character) { return character + 1; }
     int wholeNibbleNext(int character) { return (character & 0xf0) - 1; }
@@ -248,8 +246,6 @@ struct LeftCrawler
 
 struct RightCrawler
 {
-    int nextUpperHalf(int nibble) { return nibble + 1; }
-    int firstLowerHalf() { return 0x00; }
     int next(int character) { return character + 1; }
     int prev(int character) { return character - 1; }
     int wholeNibbleNext(int character) { return (character | 0x0f) + 1; }
@@ -266,18 +262,17 @@ unsigned char TrieNode<ValueType>::checkXmostCharWithLink(BinFile<TrieNode> &nod
 
     int currentCharacter = static_cast<int>(initialCharacter);
 
-    int upperHalf = static_cast<int>(getUpperHalf(currentCharacter));
-    int lowerHalf = static_cast<int>(getLowerHalf(currentCharacter));
-
     while (crawler.stillInRange(currentCharacter)) {
+
+        int upperHalf = static_cast<int>(getUpperHalf(currentCharacter));
+        int lowerHalf = static_cast<int>(getLowerHalf(currentCharacter));
+
         TriePointer childID = children[upperHalf];
 
         if (children[upperHalf].isNull()) {
             if (grandChildrenCache[upperHalf] != childPointer)
                 return crawler.prev(currentCharacter);
 
-            upperHalf = crawler.nextUpperHalf(upperHalf);
-            lowerHalf = crawler.firstLowerHalf();
             currentCharacter = crawler.wholeNibbleNext(currentCharacter);
         } else {
             TrieNode *childNode = nodes.getBin(childID.link);
