@@ -15,14 +15,15 @@
  * is that usually there's a limit to how many mmappings a process
  * in a system can have. It could be easily hit during a large DB import, etc.
  */
-template<typename BinType>
+template<typename BinType, int firstAllocationFactor = 1>
 class ExponentialAllocator
 {
 private:
     size_t nextAllocationSize;
 
 public:
-    ExponentialAllocator() : nextAllocationSize(sizeof(BinType)) {}
+    ExponentialAllocator()
+        : nextAllocationSize(sizeof(BinType) * firstAllocationFactor) {}
 
     size_t getNextAllocationSize() {
         if (nextAllocationSize < (sizeof(BinType) * 128)) {

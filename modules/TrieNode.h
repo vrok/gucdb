@@ -10,6 +10,7 @@
 
 #include "TriePointer.h"
 #include "BinFileAllocators.h"
+#include "SystemParams.h"
 
 namespace Db {
 
@@ -20,7 +21,7 @@ struct TrieNode {
 
     TrieNode() {}
 
-    typedef ExponentialAllocator<TrieNode<ValueType> > AllocatorType;
+    typedef ExponentialAllocator<TrieNode<ValueType>, TYPICAL_PAGE_SIZE / NODE_SIZE> AllocatorType;
 
     void setChildPointer(BinFile<TrieNode> &nodes,
                          unsigned char character, const TriePointer &childPointer);
