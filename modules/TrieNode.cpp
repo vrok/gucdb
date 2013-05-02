@@ -243,6 +243,7 @@ struct LeftCrawler
     int prev(int character) { return character + 1; }
     int wholeNibbleNext(int character) { return (character & 0xf0) - 1; }
     bool decLowerHalf(int &nibble) { return nibble-- > 0; }
+    bool stillInRange(int character) { return character >= 0; }
 };
 
 struct RightCrawler
@@ -253,6 +254,7 @@ struct RightCrawler
     int prev(int character) { return character - 1; }
     int wholeNibbleNext(int character) { return (character | 0x0f) + 1; }
     bool decLowerHalf(int &nibble) { return nibble++ < 0x0f; }
+    bool stillInRange(int character) { return character <= 0xff; }
 };
 
 template<typename ValueType>
@@ -267,7 +269,7 @@ unsigned char TrieNode<ValueType>::checkXmostCharWithLink(BinFile<TrieNode> &nod
     int upperHalf = static_cast<int>(getUpperHalf(currentCharacter));
     int lowerHalf = static_cast<int>(getLowerHalf(currentCharacter));
 
-    while (currentCharacter >= 0) {
+    while (crawler.stillInRange(currentCharacter)) {
         TriePointer childID = children[upperHalf];
 
         if (children[upperHalf].isNull()) {
@@ -287,6 +289,8 @@ unsigned char TrieNode<ValueType>::checkXmostCharWithLink(BinFile<TrieNode> &nod
             } while (crawler.decLowerHalf(lowerHalf));
         }
     }
+
+    return crawler.prev(currentCharacter);
 }
 
 template<typename ValueType>

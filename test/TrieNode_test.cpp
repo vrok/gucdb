@@ -89,6 +89,15 @@ TEST_F(TrieLeafTest, TestCheckLeftmostCharWithLink)
     ASSERT_EQ(40, node.checkLeftmostCharWithLink(nodesFile, 55, pointer));
 }
 
+TEST_F(TrieLeafTest, TestCheckLeftmostCharWithLink_LeftBound)
+{
+    Db::TriePointer pointer(true, 12345);
+
+    node.setChildrenRange(nodesFile, 0, 80, pointer);
+
+    ASSERT_EQ(0, node.checkLeftmostCharWithLink(nodesFile, 55, pointer));
+}
+
 TEST_F(TrieLeafTest, TestCheckRightmostCharWithLink)
 {
     Db::TriePointer pointer(true, 12345);
@@ -96,6 +105,15 @@ TEST_F(TrieLeafTest, TestCheckRightmostCharWithLink)
     node.setChildrenRange(nodesFile, 40, 80, pointer);
 
     ASSERT_EQ(80, node.checkRightmostCharWithLink(nodesFile, 55, pointer));
+}
+
+TEST_F(TrieLeafTest, TestCheckRightmostCharWithLink_RightBound)
+{
+    Db::TriePointer pointer(true, 12345);
+
+    node.setChildrenRange(nodesFile, 40, 0xff, pointer);
+
+    ASSERT_EQ(0xff, node.checkRightmostCharWithLink(nodesFile, 55, pointer));
 }
 
 TEST_F(TrieLeafTest, TestCheckRightmostLeftmostBounds)
