@@ -307,8 +307,6 @@ bool TrieNode<ValueType>::isPointerTheOnlyNonNullField(BinFile<TrieNode> &nodes,
                                                        const TriePointer &childPointer)
 {
     for (int i = 0x00; i < NODE_SIZE; i++) {
-        /* Yes, we check children and values in the same loop. */
-
         TriePointer childID = children[i];
 
         if (childID.isNull()) {
