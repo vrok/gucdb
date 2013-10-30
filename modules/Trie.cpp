@@ -337,8 +337,6 @@ void Trie<ValueType>::deleteKey(const DatabaseKey &key)
 template<typename ValueType>
 void Trie<ValueType>::dump()
 {
-    int indendFactor = 4;
-    int indent = indendFactor;
     string ind = "    ";
     queue<unsigned long long> nodesQueue;
     queue<unsigned long long> leavesQueue;

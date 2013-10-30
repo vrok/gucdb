@@ -138,7 +138,7 @@ unsigned long long Slabs::createNewSlab(int classId)
 
 	assert(newSlabId == newSlabInfoId);
 
-	Slab *newSlab = slabs->getBin(newSlabId);
+	//Slab *newSlab = slabs->getBin(newSlabId);
 	SlabInfo *newSlabInfo = slabsInfo->getBin(newSlabInfoId);
 
 	newSlabInfo->slabObjectSize = getSizeOfClass(classId);

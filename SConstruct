@@ -21,11 +21,13 @@ modules_full = ['modules/%s' % x for x in modules]
 
 env = Environment()
 #env['CCFLAGS'] = '-O2'
-env['CCFLAGS'] = '-ggdb -std=c++11'
+env['CCFLAGS'] = '-ggdb -std=c++11 -Wall'
+
+env.Replace(CXX = "g++-4.8")
 
 env.StaticLibrary(target='modules_lib', source=modules_full)
 
-db_binary = env.Program(target='db', source=['main.cpp'], LIBS=['modules_lib', 'sqlite3', 'db_cxx-5.1'], LIBPATH='.')
+db_binary = env.Program(target='db', source=['main.cpp'], LIBS=['modules_lib', 'sqlite3', 'db_cxx-5.3'], LIBPATH='.')
 
 Default(db_binary)
 

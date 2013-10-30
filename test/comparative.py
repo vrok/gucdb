@@ -50,7 +50,7 @@ class BerkeleyDBExecutable(Executable):
         self._db_files = ['/tmp/main.bdb']
 
     def get_libs_list(self):
-        return ['db_cxx-5.1']
+        return ['db_cxx-5.3']
 
     def get_name(self):
         return 'bdb'

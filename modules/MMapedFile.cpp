@@ -60,6 +60,7 @@ bool MMapedFile::extendFileAndMmapingToSize(size_t newSize, bool shouldExtendFil
     mmaped_size = newSize;
 
     //cerr << "RE MMAPED FILE " << this << " : " << mmapStart << " - " << (void*)((char*)mmapStart + newMmapingSize) << endl;
+    return true;
 }
 
 char* MMapedFile::getOffsetLoc(off_t offset) const {
@@ -73,8 +74,6 @@ char* MMapedFile::getOffsetLoc(off_t offset) const {
 
 MMapedFile::OpeningResult MMapedFile::openMMapedFile(const std::string &filename, size_t minimalInitialSize) {
     struct stat sb;
-    off_t len;
-    char *p;
 
     fd = open(filename.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
     if (fd == -1) {
@@ -96,14 +95,16 @@ MMapedFile::OpeningResult MMapedFile::openMMapedFile(const std::string &filename
 
     size_t initialSize = minimalInitialSize;
     bool fileExteningNeeded = true;
-    if (sb.st_size >= initialSize) {
-        initialSize = sb.st_size;
+
+    size_t stSizeNotAsOffset = static_cast<size_t>(sb.st_size);
+    if (stSizeNotAsOffset >= initialSize) {
+        initialSize = stSizeNotAsOffset;
         fileExteningNeeded = false;
     }
 
     extendFileAndMmapingToSize(initialSize, fileExteningNeeded);
 
-    if (sb.st_size < minimalInitialSize) {
+    if (stSizeNotAsOffset < minimalInitialSize) {
         return NEW_FILE;
     }
 

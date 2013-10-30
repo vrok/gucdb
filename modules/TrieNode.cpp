@@ -196,10 +196,10 @@ void TrieNode<ValueType>::setChildrenRange(BinFile<TrieNode> &nodes,
     } else {
         setChildrenRange(nodes, firstCharacter, (getUpperHalf(firstCharacter) << 4) | 0x0f, childPointer);
 
-        unsigned char fromNibble = getUpperHalf(firstCharacter) + 1;
-        unsigned char toNibble = getUpperHalf(lastCharacter) - 1;
+        unsigned int fromNibble = getUpperHalf(firstCharacter) + 1;
+        unsigned int toNibble = getUpperHalf(lastCharacter) - 1;
 
-        for (char nibble = fromNibble; nibble <= toNibble; nibble++) {
+        for (unsigned int nibble = fromNibble; nibble <= toNibble; nibble++) {
             TriePointer &pointer = children[nibble];
 
             if (! pointer.isNull()) {
@@ -292,14 +292,14 @@ template<typename ValueType>
 unsigned char TrieNode<ValueType>::checkLeftmostCharWithLink(BinFile<TrieNode> &nodes, unsigned char initialCharacter,
                                                              const TriePointer &childPointer)
 {
-    checkXmostCharWithLink<LeftCrawler>(nodes, initialCharacter, childPointer);
+    return checkXmostCharWithLink<LeftCrawler>(nodes, initialCharacter, childPointer);
 }
 
 template<typename ValueType>
 unsigned char TrieNode<ValueType>::checkRightmostCharWithLink(BinFile<TrieNode> &nodes, unsigned char initialCharacter,
                                                               const TriePointer &childPointer)
 {
-    checkXmostCharWithLink<RightCrawler>(nodes, initialCharacter, childPointer);
+    return checkXmostCharWithLink<RightCrawler>(nodes, initialCharacter, childPointer);
 }
 
 template<typename ValueType>

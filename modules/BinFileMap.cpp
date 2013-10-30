@@ -5,6 +5,7 @@
  *      Author: m
  */
 
+#include <cassert>
 #include <queue>
 #include <string>
 #include <iostream>
@@ -35,7 +36,9 @@ void BinFileMap::loadMapCache() {
     /* These nested loops iterate over bits in the map,
      * each iteration check bit numbered ((i * 8) + j).
      */
-    for (off_t i = 0; i < mmaped_size; i++) {
+    assert(static_cast<off_t>(mmaped_size) >= 0);
+    off_t mmapedSizeAsOff = static_cast<off_t>(mmaped_size);
+    for (off_t i = 0; i < mmapedSizeAsOff; i++) {
         unsigned char *loc = (unsigned char*) getOffsetLoc(i);
         for (int j = 0; j < 8; j++) {
             if ((*loc & (1 << j)) == 0) {
@@ -55,7 +58,7 @@ unsigned long BinFileMap::fetchEmptyBin() {
         size_t newMmapedSize = mmaped_size + BIN_FILE_MAP_EXPAND_SIZE;
         extendFileAndMmapingToSize(newMmapedSize);
 
-        for (int i = currentMmapedSize * 8; i < newMmapedSize * 8; i++) {
+        for (unsigned long i = currentMmapedSize * 8; i < newMmapedSize * 8; i++) {
             emptyBins.push(i);
             cerr << "pusing " << i << endl;
         }
@@ -82,7 +85,7 @@ void BinFileMap::makeBinEmpty(unsigned long index)
 
 bool BinFileMap::isBinEmpty(unsigned long index)
 {
-    return 0 == getOffsetLoc(index / 8) & (1 << (index % 8));
+    return 0 == (*getOffsetLoc(index / 8) & (1 << (index % 8)));
 }
 
 BinFileMap::Iterator::Iterator(const BinFileMap &parent)
