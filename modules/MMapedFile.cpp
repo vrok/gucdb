@@ -62,7 +62,6 @@ bool MMapedFile::extendFileAndMmapingToSize(size_t newSize, bool shouldExtendFil
 
     size_t newMmapingSize = newSize - mmaped_size;
 
-    //cerr << "NEW MMAPING " << newMmapingSize << " " << newSize << endl;
     assert((newMmapingSize % SystemParams::pageSize()) == 0);
 
     void *mmapStart = mmap(0, newMmapingSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, (off_t) mmaped_size);
@@ -76,7 +75,6 @@ bool MMapedFile::extendFileAndMmapingToSize(size_t newSize, bool shouldExtendFil
     fileMmaps[mmaped_size] = (char*) mmapStart;
     mmaped_size = newSize;
 
-    //cerr << "RE MMAPED FILE " << this << " : " << mmapStart << " - " << (void*)((char*)mmapStart + newMmapingSize) << endl;
     return true;
 }
 
@@ -144,8 +142,6 @@ string MMapedFile::mmapErrnoToStr(int errnoNum) const {
 }
 
 void MMapedFile::closeMMapedFile() {
-
-    //cout << "CCCCCCC close" << endl;
 #if 0
     if (munmap(fileStart, mmaped_size) == -1) {
         cerr << "Error un-mapping trie file" << endl;
